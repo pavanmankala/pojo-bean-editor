@@ -15,6 +15,11 @@ public class PBEOMapElement extends PBEOExtendableElement {
     }
 
     @Override
+    public Object removeBranchElement(int index) {
+        return null;
+    }
+
+    @Override
     public Object getElement() {
         return null;
     }

@@ -29,6 +29,12 @@ public class PBEOCollectionElement extends PBEOExtendableElement {
 
     @Override
     public Object addNewBranch(int index) {
+        Object obj = extensionElementCreator.createPojoBean(valueType);
+        return null;
+    }
+
+    @Override
+    public Object removeBranchElement(int index) {
         return null;
     }
 
@@ -40,5 +46,26 @@ public class PBEOCollectionElement extends PBEOExtendableElement {
     @Override
     public Object setElement(Object element) {
         return null;
+    }
+
+    public static class MapEntry<T> {
+        private String key;
+        private T value;
+
+        public String getKey() {
+            return key;
+        }
+
+        public void setKey(String key) {
+            this.key = key;
+        }
+
+        public T getValue() {
+            return value;
+        }
+
+        public void setValue(T value) {
+            this.value = value;
+        }
     }
 }

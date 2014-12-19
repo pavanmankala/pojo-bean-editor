@@ -14,6 +14,8 @@ public abstract class PBEOExtendableElement extends PBEOModelElement {
 
     public abstract Object addNewBranch(int index);
 
+    public abstract Object removeBranchElement(int index);
+
     @Override
     public final boolean isLeaf() {
         return false;
