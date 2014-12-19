@@ -1,4 +1,4 @@
-package org.apache.pojo.beaneditor.model;
+package org.apache.pojo.beaneditor.model.outline;
 
 public class PBEUtils {
     public static boolean isRepresentedAsLeaf(Class<?> classType) {

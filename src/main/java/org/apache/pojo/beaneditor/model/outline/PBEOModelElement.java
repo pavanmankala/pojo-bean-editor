@@ -1,17 +1,19 @@
-package org.apache.pojo.beaneditor.model;
+package org.apache.pojo.beaneditor.model.outline;
 
 import org.apache.pojo.beaneditor.PBEElementMutator;
 
-public class PBEModelElement {
-    private final PBEModelElement parentElem;
+public abstract class PBEOModelElement {
+    protected final PBEOModelElement parentElem;
+    protected final PBEElementMutator mutator;
+    protected final Object context;
     private final String elemName;
-    private final PBEElementMutator mutator;
     private final boolean isLeaf;
 
-    public PBEModelElement(String elemName, PBEModelElement parent, PBEElementMutator mutator, Object obj) {
+    public PBEOModelElement(String elemName, PBEOModelElement parent, PBEElementMutator mutator, Object ctx) {
         this.parentElem = parent;
         this.mutator = mutator;
         this.elemName = elemName;
+        this.context = ctx;
         this.isLeaf = PBEUtils.isRepresentedAsLeaf(mutator.getElemGetter().getReturnType());
     }
 
@@ -27,7 +29,11 @@ public class PBEModelElement {
         return mutator;
     }
 
-    public PBEModelElement getParentElem() {
+    public PBEOModelElement getParentElem() {
         return parentElem;
     }
+
+    public abstract Object getElement();
+
+    public abstract Object setElement(Object element);
 }
