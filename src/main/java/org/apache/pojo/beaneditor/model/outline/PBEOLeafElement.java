@@ -2,8 +2,8 @@ package org.apache.pojo.beaneditor.model.outline;
 
 import org.apache.pojo.beaneditor.PBEElementMutator;
 
-public class PBEOLeafElement extends PBEOModelElement {
-    public PBEOLeafElement(String elemName, PBEOModelElement parent, PBEElementMutator mutator, Object ctx) {
+public class PBEOLeafElement extends PBEOObjectElement {
+    public PBEOLeafElement(String elemName, PBEOElement parent, PBEElementMutator mutator, Object ctx) {
         super(elemName, parent, mutator, ctx);
     }
 

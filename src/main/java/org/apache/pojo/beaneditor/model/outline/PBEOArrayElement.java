@@ -4,7 +4,7 @@ import org.apache.pojo.beaneditor.PBEElementMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
 
 public class PBEOArrayElement extends PBEOExtendableElement {
-    public PBEOArrayElement(String elemName, PojoBeanCreator creator, PBEOModelElement parent,
+    public PBEOArrayElement(String elemName, PojoBeanCreator creator, PBEOElement parent,
             PBEElementMutator mutator, Object ctx) {
         super(elemName, creator, parent, mutator, ctx);
     }

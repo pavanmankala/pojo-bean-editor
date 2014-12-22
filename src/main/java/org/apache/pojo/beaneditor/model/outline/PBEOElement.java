@@ -2,14 +2,14 @@ package org.apache.pojo.beaneditor.model.outline;
 
 import org.apache.pojo.beaneditor.PBEElementMutator;
 
-public abstract class PBEOModelElement {
-    protected final PBEOModelElement parentElem;
+public abstract class PBEOElement {
+    protected final PBEOElement parentElem;
     protected final PBEElementMutator mutator;
     protected final Object context;
     private final String elemName;
     private final boolean isLeaf;
 
-    public PBEOModelElement(String elemName, PBEOModelElement parent, PBEElementMutator mutator, Object ctx) {
+    public PBEOElement(String elemName, PBEOElement parent, PBEElementMutator mutator, Object ctx) {
         this.parentElem = parent;
         this.mutator = mutator;
         this.elemName = elemName;
@@ -29,7 +29,7 @@ public abstract class PBEOModelElement {
         return mutator;
     }
 
-    public PBEOModelElement getParentElem() {
+    public PBEOElement getParentElem() {
         return parentElem;
     }
 
