@@ -1,6 +1,6 @@
 package org.apache.pojo.beaneditor.model.outline;
 
-public class PBEOMapEntry<T> {
+public class MapEntry<T> {
     private String key;
     private T value;
 

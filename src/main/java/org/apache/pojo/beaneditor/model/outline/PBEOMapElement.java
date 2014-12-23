@@ -2,10 +2,7 @@ package org.apache.pojo.beaneditor.model.outline;
 
 import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -13,7 +10,7 @@ import org.apache.pojo.beaneditor.PBEElementMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
 
 public class PBEOMapElement extends PBEOExtendableElement {
-    private final Map<Integer, PBEOMapEntry<Object>> backingMap;
+    private final Map<Integer, PBEOKeyValuePair> backingMap;
     private final Class<?> valueType;
 
     public PBEOMapElement(String elemName, PojoBeanCreator creator, PBEOElement parent, PBEElementMutator mutator,
@@ -33,23 +30,26 @@ public class PBEOMapElement extends PBEOExtendableElement {
             throw new RuntimeException("no value type defined");
         }
 
-        backingMap = new HashMap<Integer, PBEOMapEntry<Object>>();
+        backingMap = new HashMap<Integer, PBEOKeyValuePair>();
     }
 
     @Override
     public Object addNewBranch(final int index) {
-        PBEOMapEntry<Object> newEntry = new PBEOMapEntry<Object>();
+        MapEntry<Object> newEntry = new MapEntry<Object>();
         Object newValueObj = extensionElementCreator.createPojoBean(valueType);
 
         newEntry.setKey("/** TODO: Insert Key here**/");
         newEntry.setValue(newValueObj);
+        PBEOMapEntryElement keyElem = new PBEOMapEntryElement("Key", this, null, newEntry), valueElem = new PBEOMapEntryElement(
+                "Key", this, null, newEntry);
+        PBEOKeyValuePair pair = new PBEOKeyValuePair(keyElem, valueElem);
 
-        PBEOMapEntry<Object> existingValue = backingMap.remove(index);
+        PBEOKeyValuePair existingValue = backingMap.remove(index);
 
         if (existingValue != null) {
             int nextIndex = index;
 
-            backingMap.put(nextIndex++, newEntry);
+            backingMap.put(nextIndex++, pair);
 
             while (existingValue != null) {
                 existingValue = backingMap.put(nextIndex++, existingValue);
@@ -59,7 +59,7 @@ public class PBEOMapElement extends PBEOExtendableElement {
         }
 
         if (index == backingMap.size()) {
-            backingMap.put(index, newEntry);
+            backingMap.put(index, pair);
         } else {
             throw new RuntimeException("Illegal index specified: " + index);
         }
@@ -69,7 +69,7 @@ public class PBEOMapElement extends PBEOExtendableElement {
 
     @Override
     public Object removeBranchElement(final int index) {
-        PBEOMapEntry<Object> existingValue = backingMap.get(index), lastValue = backingMap.get(backingMap.size() - 1);
+        MapEntry<Object> existingValue = backingMap.get(index), lastValue = backingMap.get(backingMap.size() - 1);
 
         for (int itIndex = backingMap.size() - 2; itIndex >= index; itIndex--) {
             lastValue = backingMap.put(itIndex, lastValue);
@@ -100,7 +100,7 @@ public class PBEOMapElement extends PBEOExtendableElement {
 
         for (Entry<?, ?> e : ((Map<?, ?>) element).entrySet()) {
             if (e.getKey() instanceof String && valueType.isInstance(e.getValue())) {
-                PBEOMapEntry<Object> mapObject = new PBEOMapEntry<Object>();
+                MapEntry<Object> mapObject = new MapEntry<Object>();
                 mapObject.setKey(e.getKey().toString());
                 mapObject.setValue(e.getValue());
 
@@ -114,6 +114,12 @@ public class PBEOMapElement extends PBEOExtendableElement {
         return null;
     }
 
+    public static class PBEOKeyValuePair {
+        public final PBEOMapEntryElement keyElem, valueElem;
 
-
+        public PBEOKeyValuePair(PBEOMapEntryElement key, PBEOMapEntryElement val) {
+            keyElem = key;
+            valueElem = val;
+        }
+    }
 }
