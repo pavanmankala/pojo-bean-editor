@@ -3,10 +3,10 @@ package org.apache.pojo.beaneditor;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 
-public class PBEElementMutator {
+public class PBENodeValueMutator {
     private final Method elemSetter, elemGetter;
 
-    public PBEElementMutator(Method setter, Method getter) {
+    public PBENodeValueMutator(Method setter, Method getter) {
         elemSetter = setter;
         elemGetter = getter;
     }

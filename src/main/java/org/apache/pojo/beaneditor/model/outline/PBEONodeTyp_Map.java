@@ -6,16 +6,15 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.pojo.beaneditor.PBEElementMutator;
+import org.apache.pojo.beaneditor.PBENodeValueMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
 
-public class PBEOMapElement extends PBEOExtendableElement {
+public class PBEONodeTyp_Map extends PBEOExtendableNode {
     private final Map<Integer, PBEOKeyValuePair> backingMap;
     private final Class<?> valueType;
 
-    public PBEOMapElement(String elemName, PojoBeanCreator creator, PBEOElement parent, PBEElementMutator mutator,
-            Object ctx) {
-        super(elemName, creator, parent, mutator, ctx);
+    public PBEONodeTyp_Map(String elemName, PojoBeanCreator creator, PBENodeValueMutator mutator, Object ctx) {
+        super(elemName, creator, mutator, ctx);
         Type retType = mutator.getElemGetter().getGenericReturnType();
         if (retType instanceof ParameterizedType) {
             ParameterizedType pType = (ParameterizedType) retType;
@@ -34,14 +33,14 @@ public class PBEOMapElement extends PBEOExtendableElement {
     }
 
     @Override
-    public Object addNewBranch(final int index) {
+    public Object addNewBranchNode(final int index) {
         MapEntry<Object> newEntry = new MapEntry<Object>();
         Object newValueObj = extensionElementCreator.createPojoBean(valueType);
 
         newEntry.setKey("/** TODO: Insert Key here**/");
         newEntry.setValue(newValueObj);
-        PBEOMapEntryElement keyElem = new PBEOMapEntryElement("Key", this, null, newEntry), valueElem = new PBEOMapEntryElement(
-                "Key", this, null, newEntry);
+        PBEOMapEntryNode keyElem = new PBEOMapEntryNode("Key", null, newEntry), valueElem = new PBEOMapEntryNode(
+                "Key", null, newEntry);
         PBEOKeyValuePair pair = new PBEOKeyValuePair(keyElem, valueElem);
 
         PBEOKeyValuePair existingValue = backingMap.remove(index);
@@ -68,8 +67,8 @@ public class PBEOMapElement extends PBEOExtendableElement {
     }
 
     @Override
-    public Object removeBranchElement(final int index) {
-        MapEntry<Object> existingValue = backingMap.get(index), lastValue = backingMap.get(backingMap.size() - 1);
+    public Object removeBranchNode(final int index) {
+        PBEOKeyValuePair existingValue = backingMap.get(index), lastValue = backingMap.get(backingMap.size() - 1);
 
         for (int itIndex = backingMap.size() - 2; itIndex >= index; itIndex--) {
             lastValue = backingMap.put(itIndex, lastValue);
@@ -83,12 +82,12 @@ public class PBEOMapElement extends PBEOExtendableElement {
     }
 
     @Override
-    public Object getElement() {
+    public Object getNodeValue() {
         return backingMap;
     }
 
     @Override
-    public Object setElement(Object element) {
+    public Object setNodeValue(Object element) {
         if (element == null) {
             mutator.setObject(context, element);
             return null;
@@ -104,7 +103,8 @@ public class PBEOMapElement extends PBEOExtendableElement {
                 mapObject.setKey(e.getKey().toString());
                 mapObject.setValue(e.getValue());
 
-                new PBEOMapEntryElement("MapKeyValuePair", this, null, mapObject);
+                //new PBEOMapEntryElement("MapKeyValuePair", this, null, mapObject);
+                // 
             } else {
                 throw new RuntimeException("Illegal object type found in map; has to be of "
                         + valueType.getSimpleName());
@@ -115,11 +115,17 @@ public class PBEOMapElement extends PBEOExtendableElement {
     }
 
     public static class PBEOKeyValuePair {
-        public final PBEOMapEntryElement keyElem, valueElem;
+        public final PBEOMapEntryNode keyElem, valueElem;
 
-        public PBEOKeyValuePair(PBEOMapEntryElement key, PBEOMapEntryElement val) {
+        public PBEOKeyValuePair(PBEOMapEntryNode key, PBEOMapEntryNode val) {
             keyElem = key;
             valueElem = val;
         }
+    }
+
+    @Override
+    public void visit(PBEOVisitor visitor, int step) {
+        // TODO Auto-generated method stub
+        
     }
 }

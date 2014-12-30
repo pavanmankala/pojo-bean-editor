@@ -1,19 +1,19 @@
 package org.apache.pojo.beaneditor.model.outline;
 
-import org.apache.pojo.beaneditor.PBEElementMutator;
+import org.apache.pojo.beaneditor.PBENodeValueMutator;
 
-public class PBEOLeafElement extends PBEOObjectElement {
-    public PBEOLeafElement(String elemName, PBEOElement parent, PBEElementMutator mutator, Object ctx) {
-        super(elemName, parent, mutator, ctx);
+public abstract class PBEOAbstractNode extends PBEONode {
+    public PBEOAbstractNode(String elemName, PBENodeValueMutator mutator, Object ctx) {
+        super(elemName, mutator, ctx);
     }
 
     @Override
-    public Object getElement() {
+    public Object getNodeValue() {
         return mutator.getObject(context);
     }
 
     @Override
-    public Object setElement(Object element) {
+    public Object setNodeValue(Object element) {
         Object existing = mutator.getObject(context);
 
         if (existing != null && element != null && !existing.equals(element)) {
