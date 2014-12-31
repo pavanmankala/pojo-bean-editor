@@ -22,4 +22,20 @@ public class PBEBeanParserTest {
 
         Assert.assertNotNull(node);
     }
+
+    @Test public void testPBEDocumentInit() {
+        PBEOAggregatedNode node = PBEBeanParser.parseBean(new PojoBeanCreator() {
+            @Override
+            public Object createPojoBean(Class<?> pojoTypeClazz) {
+                if (pojoTypeClazz == TestBean.class) {
+                    return new TestBean();
+                } else if (pojoTypeClazz == ChildBean.class) {
+                    return new ChildBean();
+                }
+                return null;
+            }
+        }, new TestBean());
+        PBEDocument doc = new PBEDocument(node);
+        System.out.println(doc);
+    }
 }

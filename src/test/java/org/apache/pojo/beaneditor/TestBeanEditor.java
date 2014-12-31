@@ -3,7 +3,6 @@ package org.apache.pojo.beaneditor;
 import java.awt.Container;
 
 import javax.swing.JFrame;
-import javax.swing.JTextArea;
 import javax.swing.SwingUtilities;
 
 import org.junit.Test;
@@ -29,7 +28,7 @@ public class TestBeanEditor {
         JFrame frame = new JFrame("Test Bean Editor");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container c = frame.getContentPane();
-        c.add(new JTextArea(new PBEDocument(PBEBeanParser.parseBean(new PojoBeanCreator() {
+        c.add(new PojoBeanEditor(new PojoBeanCreator() {
             @Override
             public Object createPojoBean(Class<?> pojoTypeClazz) {
                 if (pojoTypeClazz == TestBean.class) {
@@ -39,7 +38,7 @@ public class TestBeanEditor {
                 }
                 return null;
             }
-        }, new TestBean()))));
+        }, TestBean.class));
 
         frame.pack();
         frame.setSize(400, 600);
@@ -47,5 +46,4 @@ public class TestBeanEditor {
         frame.setVisible(true);
     }
 
-    
 }
