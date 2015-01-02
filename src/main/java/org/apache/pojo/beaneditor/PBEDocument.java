@@ -8,6 +8,7 @@ import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
 import javax.swing.text.GapContent;
+import javax.swing.text.Segment;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleContext;
 
@@ -16,8 +17,12 @@ import org.apache.pojo.beaneditor.model.outline.PBEONode;
 import org.apache.pojo.beaneditor.model.outline.Visitable.PBEOVisitor;
 
 public class PBEDocument extends AbstractDocument {
+    public static final String KEY_ELEM = "key", VALUE_ELEM = "value", MEMBER_ELEM = "member", ROOT_ELEM = "root";
+    public static final String ATTRIB_STEP_NO = "PBE_STEP", ATTRIB_NODE_OBJ = "PBE_NODE_OBJ";
+
     private final PBEOAggregatedNode aggregatedNode;
-    private final AbstractElement defaultRoot;
+    private final BranchElement defaultRoot;
+    private BranchElement editingKeyOrValElem;
 
     protected PBEDocument(PBEOAggregatedNode aggNode) {
         super(new GapContent(10000));
@@ -57,11 +62,11 @@ public class PBEDocument extends AbstractDocument {
 
                     MemberBranchElement mbe = new MemberBranchElement(null);
                     branches.add(mbe);
-                    mbe.addAttribute("step", step);
+                    mbe.addAttribute(ATTRIB_STEP_NO, step);
 
                     StyleContext ctx = StyleContext.getDefaultStyleContext();
-                    AttributeSet set = ctx.addAttribute(SimpleAttributeSet.EMPTY, "PBE_Node", node);
-                    set = ctx.addAttribute(SimpleAttributeSet.EMPTY, "PBE_Node_Step", step);
+                    AttributeSet set = ctx.addAttribute(SimpleAttributeSet.EMPTY, ATTRIB_NODE_OBJ, node);
+                    set = ctx.addAttribute(set, ATTRIB_STEP_NO, step);
 
                     BranchElement keyBranch = new KeyBranchElement(mbe, set), valueBranch = new ValueBranchElement(mbe,
                             set);
@@ -91,7 +96,69 @@ public class PBEDocument extends AbstractDocument {
 
     @Override
     protected void insertUpdate(DefaultDocumentEvent chng, AttributeSet attr) {
+        BranchElement prevMemberElem = null, currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement(), nextMemberElem = null;
+        BranchElement membParent = (BranchElement) currMemberElem.getParentElement();
+        int memberIndex;
+
+        for (memberIndex = 0; memberIndex < membParent.getChildCount(); memberIndex++) {
+            if (membParent.getElement(memberIndex) == currMemberElem) {
+                break;
+            }
+        }
+
+        if (memberIndex > 0) {
+            prevMemberElem = (BranchElement) membParent.getElement(memberIndex - 1);
+        }
+
+        if (memberIndex < membParent.getChildCount() - 1) {
+            nextMemberElem = (BranchElement) membParent.getElement(memberIndex + 1);
+        }
+
+        KeyBranchElement keyElem = (KeyBranchElement) currMemberElem.getElement(0);
+        ValueBranchElement valueElem = (ValueBranchElement) currMemberElem.getElement(1);
+
+        PBEONode node = (PBEONode) keyElem.getAttribute(ATTRIB_NODE_OBJ);
+
+        Element[] keys = new Element[1];
+        keys[0] = createLeafElement(keyElem, null, keyElem.getStartOffset(), keyElem.getStartOffset()
+                + node.getNodeName().length());
+
+        Element[] values = new Element[1];
+        values[0] = createLeafElement(valueElem, null, keyElem.getStartOffset() + node.getNodeName().length(),
+                valueElem.getEndOffset());
+
+        keyElem.replace(0, 1, keys);
+        valueElem.replace(0, 1, values);
+
         super.insertUpdate(chng, attr);
+    }
+
+    @Override
+    public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+        if (offs == 0) {
+            return;
+        }
+
+        editingKeyOrValElem = defaultRoot;
+        String name = editingKeyOrValElem.getName();
+
+        // find the currently editing key or value element
+        while (name != KEY_ELEM && name != VALUE_ELEM) {
+            editingKeyOrValElem = (BranchElement) editingKeyOrValElem.getElement(editingKeyOrValElem
+                    .getElementIndex(offs));
+            name = editingKeyOrValElem.getName();
+        }
+
+        if (name == KEY_ELEM) {
+            KeyBranchElement keyElem = (KeyBranchElement) editingKeyOrValElem;
+
+            if (offs > keyElem.getStartOffset() && offs < keyElem.getEndOffset()) {
+                // Key is being edited -> Not allowed
+                return;
+            }
+        }
+
+        super.insertString(offs, str, a);
     }
 
     @Override
@@ -116,7 +183,7 @@ public class PBEDocument extends AbstractDocument {
 
         @Override
         public String getName() {
-            return "root";
+            return ROOT_ELEM;
         }
     }
 
@@ -127,7 +194,7 @@ public class PBEDocument extends AbstractDocument {
 
         @Override
         public String getName() {
-            return "member";
+            return MEMBER_ELEM;
         }
     }
 
@@ -138,7 +205,7 @@ public class PBEDocument extends AbstractDocument {
 
         @Override
         public String getName() {
-            return "key";
+            return KEY_ELEM;
         }
     }
 
@@ -149,7 +216,7 @@ public class PBEDocument extends AbstractDocument {
 
         @Override
         public String getName() {
-            return "value";
+            return VALUE_ELEM;
         }
     }
 }

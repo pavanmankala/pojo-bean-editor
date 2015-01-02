@@ -1,16 +1,18 @@
 package org.apache.pojo.beaneditor;
 
+import java.awt.Graphics;
+import java.awt.Shape;
+
 import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
-import javax.swing.text.AttributeSet;
-import javax.swing.text.Document;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.BoxView;
 import javax.swing.text.Element;
 import javax.swing.text.ElementIterator;
-import javax.swing.text.StyleConstants;
-import javax.swing.text.TableView;
+import javax.swing.text.PlainView;
+import javax.swing.text.Position.Bias;
 import javax.swing.text.View;
-import javax.swing.text.html.HTML;
 
 public class PojoBeanEditorUI extends BasicTextAreaUI {
     private final PojoBeanEditor editor;
@@ -26,55 +28,45 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
 
     public View create(Element elem) {
         if (!(elem.getDocument() instanceof PBEDocument)) {
-            return super.create(elem);
+            return new BoxView(elem, BoxView.X_AXIS);
         }
 
         PBEDocument pbeDoc = (PBEDocument) elem.getDocument();
-        String kind = elem.getName();
-        PojoTableView rootTableView;
-        ElementIterator iterator = new ElementIterator(elem);
 
-        switch (kind) {
-            case "key":
+        switch (elem.getName()) {
+            case PBEDocument.KEY_ELEM:
                 break;
-            case "value":
+            case PBEDocument.VALUE_ELEM:
                 break;
-            case "root":
-                rootTableView = new PojoTableView(elem);
-                Element element;
-                while ((element = iterator.next()) != null) {
-                    AttributeSet attributes = element.getAttributes();
-                    Object name = attributes.getAttribute(StyleConstants.NameAttribute);
-                    if ((name instanceof HTML.Tag)
-                            && ((name == HTML.Tag.H1) || (name == HTML.Tag.H2) || (name == HTML.Tag.H3))) {
-                        // Build up content text as it may be within multiple
-                        // elements
-                        StringBuffer text = new StringBuffer();
-                        int count = element.getElementCount();
-                        for (int i = 0; i < count; i++) {
-                            Element child = element.getElement(i);
-                            AttributeSet childAttributes = child.getAttributes();
-                            if (childAttributes.getAttribute(StyleConstants.NameAttribute) == HTML.Tag.CONTENT) {
-                                int startOffset = child.getStartOffset();
-                                int endOffset = child.getEndOffset();
-                                int length = endOffset - startOffset;
-                                //text.append(htmlDoc.getText(startOffset, length));
-                            }
-                        }
-                        System.out.println(name + ": " + text.toString());
-                    }
-                }
-
-                return rootTableView;
-            case "member":
+            case PBEDocument.ROOT_ELEM:
+                return new PojoTableView(elem);
+            case PBEDocument.MEMBER_ELEM:
                 break;
         }
+
         return null;
     }
 
-    class PojoTableView extends TableView {
+    class PojoTableView extends PojoBeanView {
         public PojoTableView(Element elem) {
             super(elem);
+            ElementIterator iterator = new ElementIterator(elem);
+
+            Element element = iterator.next(); // root element
+            BoxView currentRow = null;
+
+            while ((element = iterator.next()) != null) {
+                switch (element.getName()) {
+                    case PBEDocument.KEY_ELEM:
+                    case PBEDocument.VALUE_ELEM:
+                        currentRow.append(new PlainView(element));
+                        break;
+                    case PBEDocument.MEMBER_ELEM:
+                        currentRow = new PojoMemberView(element);
+                        append(currentRow);
+                        break;
+                }
+            }
         }
     }
 }
