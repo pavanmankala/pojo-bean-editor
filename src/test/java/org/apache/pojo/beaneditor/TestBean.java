@@ -2,15 +2,16 @@ package org.apache.pojo.beaneditor;
 
 public class TestBean {
     private String myName;
-    private String myValue;
+    private String myValue1;
     private ChildBean myChild;
+    private String myValue2;
 
-    public String getMyValue() {
-        return myValue;
+    public String getMyValue1() {
+        return myValue1;
     }
 
-    public void setMyValue(String myValue) {
-        this.myValue = myValue;
+    public void setMyValue1(String myValue1) {
+        this.myValue1 = myValue1;
     }
 
     public void setMyChild(ChildBean myChild) {
@@ -27,5 +28,13 @@ public class TestBean {
 
     public void setMyName(String myName) {
         this.myName = myName;
+    }
+
+    public String getMyValue2() {
+        return myValue2;
+    }
+
+    public void setMyValue2(String myValue2) {
+        this.myValue2 = myValue2;
     }
 }

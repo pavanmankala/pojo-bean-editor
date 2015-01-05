@@ -26,7 +26,7 @@ public class PBEOAggregatedNode extends PBEOAbstractNode implements Visitable {
             visitor.node(node, step);
 
             if (!node.isLeaf() && node instanceof Visitable) {
-                ((Visitable) node).visit(visitor, step++);
+                ((Visitable) node).visit(visitor, step + 1);
             }
         }
     }

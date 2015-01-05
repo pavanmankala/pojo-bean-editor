@@ -9,19 +9,8 @@ public class PojoMemberView extends BoxView {
         super(elem, X_AXIS);
     }
 
-    @Override
-    protected void layoutMajorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
-        int n = getViewCount();
-        for (int i = 0; i < n; i++) {
-            View v = getView(i);
-            spans[i] = (int) v.getPreferredSpan(axis);
-        }
-
-        // make the adjustments
-        int totalOffset = 0;
-        for (int i = 0; i < n; i++) {
-            offsets[i] = totalOffset;
-            totalOffset = (int) Math.min((long) totalOffset + (long) spans[i], Integer.MAX_VALUE);
-        }
-    }
+@Override
+public float getAlignment(int axis) {
+    return 0.0f;
+}
 }

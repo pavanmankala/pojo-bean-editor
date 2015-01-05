@@ -3,6 +3,7 @@ package org.apache.pojo.beaneditor;
 import java.awt.Container;
 
 import javax.swing.JFrame;
+import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
 import org.junit.Test;
@@ -28,17 +29,16 @@ public class TestBeanEditor {
         JFrame frame = new JFrame("Test Bean Editor");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container c = frame.getContentPane();
-        c.add(new PojoBeanEditor(new PojoBeanCreator() {
+        c.add(new JScrollPane(new PojoBeanEditor(new PojoBeanCreator() {
             @Override
             public Object createPojoBean(Class<?> pojoTypeClazz) {
-                if (pojoTypeClazz == TestBean.class) {
-                    return new TestBean();
-                } else if (pojoTypeClazz == ChildBean.class) {
-                    return new ChildBean();
+                try {
+                    return pojoTypeClazz.newInstance();
+                } catch (InstantiationException | IllegalAccessException e) {
+                    throw new RuntimeException(e);
                 }
-                return null;
             }
-        }, TestBean.class));
+        }, TestBean.class)));
 
         frame.pack();
         frame.setSize(400, 600);

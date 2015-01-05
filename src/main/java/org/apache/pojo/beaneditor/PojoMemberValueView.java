@@ -1,34 +1,38 @@
 package org.apache.pojo.beaneditor;
 
-import java.awt.Graphics;
 import java.awt.Shape;
 
-import javax.swing.text.BadLocationException;
+import javax.swing.event.DocumentEvent;
+import javax.swing.text.BoxView;
 import javax.swing.text.Element;
-import javax.swing.text.Position.Bias;
 import javax.swing.text.View;
+import javax.swing.text.ViewFactory;
 
-public class PojoMemberValueView extends View {
+public class PojoMemberValueView extends BoxView {
     public PojoMemberValueView(Element elem) {
-        super(elem);
+        super(elem, X_AXIS);
+    }
+    @Override
+    public float getAlignment(int axis) {
+        return 0.0f;
+    }
+    @Override
+    protected short getLeftInset() {
+        return 15;
     }
 
     @Override
-    public float getPreferredSpan(int axis) {
-        return 0;
+    public void changedUpdate(DocumentEvent e, Shape a, ViewFactory f) {
+        getView(0).changedUpdate(e, a, f);
     }
 
     @Override
-    public void paint(Graphics g, Shape allocation) {
+    public void insertUpdate(DocumentEvent e, Shape a, ViewFactory f) {
+        getView(0).insertUpdate(e, a, f);
     }
 
     @Override
-    public Shape modelToView(int pos, Shape a, Bias b) throws BadLocationException {
-        return null;
-    }
-
-    @Override
-    public int viewToModel(float x, float y, Shape a, Bias[] biasReturn) {
-        return 0;
+    public void removeUpdate(DocumentEvent e, Shape a, ViewFactory f) {
+        getView(0).removeUpdate(e, a, f);
     }
 }

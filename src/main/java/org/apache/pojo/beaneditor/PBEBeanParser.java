@@ -6,7 +6,6 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -16,16 +15,19 @@ import java.util.Map;
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.apache.pojo.beaneditor.model.outline.PBEOLeafNode;
 import org.apache.pojo.beaneditor.model.outline.PBEONodeTyp_Array;
-import org.apache.pojo.beaneditor.model.outline.PBEONodeTyp_Collection;
+import org.apache.pojo.beaneditor.model.outline.PBEONodeTyp_List;
 import org.apache.pojo.beaneditor.model.outline.PBEONodeTyp_Map;
 import org.apache.pojo.beaneditor.model.outline.PBEUtils;
 
 public class PBEBeanParser {
     public static PBEOAggregatedNode parseBean(PojoBeanCreator creator, Object obj) {
         PBEOAggregatedNode root = new PBEOAggregatedNode("root", null, null);
-
-        parseBean0(creator, obj.getClass(), root, obj);
+        parseBeanIntoNode(root, creator, obj);
         return root;
+    }
+
+    public static void parseBeanIntoNode(PBEOAggregatedNode parentNode, PojoBeanCreator creator, Object obj) {
+        parseBean0(creator, obj.getClass(), parentNode, obj);
     }
 
     private static void parseBean0(PojoBeanCreator creator, Class<?> clazz, PBEOAggregatedNode parentNode,
@@ -71,23 +73,31 @@ public class PBEBeanParser {
 
             PBENodeValueMutator mutator;
             Class<?> paramTyp = isGet ? m.getReturnType() : m.getParameterTypes()[0];
+            Method setter = null, getter = null;
 
             try {
-                mutator = new PBENodeValueMutator(
-                        isGet ? clazz.getMethod("set" + mName, new Class[] { paramTyp, }) : m, isGet ? m
-                                : clazz.getMethod("get" + mName, new Class[] {}));
+                setter = isGet ? clazz.getMethod("set" + mName, new Class[] { paramTyp, }) : m;
             } catch (NoSuchMethodException | SecurityException e) {
-                throw new RuntimeException(e);
+                // throw new RuntimeException(e);
+                // TODO: log error
             }
 
+            try {
+                getter = isGet ? m : clazz.getMethod("get" + mName, new Class[] {});
+            } catch (NoSuchMethodException | SecurityException e) {
+                // throw new RuntimeException(e);
+                // TODO: log error
+            }
+
+            mutator = new PBENodeValueMutator(setter, getter);
             mutators.put(mName, mutator);
 
             if (PBEUtils.isRepresentedAsLeaf(paramTyp)) {
                 parentNode.addElement(new PBEOLeafNode(mName, mutator, parentObj));
             } else if (Map.class.isAssignableFrom(paramTyp)) {
                 parentNode.addElement(new PBEONodeTyp_Map(mName, creator, mutator, parentObj));
-            } else if (Collection.class.isAssignableFrom(paramTyp)) {
-                parentNode.addElement(new PBEONodeTyp_Collection(mName, creator, mutator, parentObj));
+            } else if (List.class.isAssignableFrom(paramTyp)) {
+                parentNode.addElement(new PBEONodeTyp_List(mName, creator, mutator, parentObj));
             } else if (Array.class.isAssignableFrom(paramTyp)) {
                 parentNode.addElement(new PBEONodeTyp_Array(mName, creator, mutator, parentObj));
             } else {

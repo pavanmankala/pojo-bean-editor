@@ -1,18 +1,17 @@
 package org.apache.pojo.beaneditor;
 
-import java.awt.Graphics;
-import java.awt.Shape;
-
 import javax.swing.JComponent;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
-import javax.swing.text.BadLocationException;
+import javax.swing.text.AbstractDocument;
 import javax.swing.text.BoxView;
 import javax.swing.text.Element;
 import javax.swing.text.ElementIterator;
 import javax.swing.text.PlainView;
-import javax.swing.text.Position.Bias;
 import javax.swing.text.View;
+
+import org.apache.pojo.beaneditor.PojoMemberKeyView.KeyView;
+import org.apache.pojo.beaneditor.model.outline.PBEONode;
 
 public class PojoBeanEditorUI extends BasicTextAreaUI {
     private final PojoBeanEditor editor;
@@ -42,6 +41,8 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
                 return new PojoTableView(elem);
             case PBEDocument.MEMBER_ELEM:
                 break;
+            case AbstractDocument.ContentElementName:
+                return new PlainView(elem.getParentElement());
         }
 
         return null;
@@ -58,8 +59,17 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
             while ((element = iterator.next()) != null) {
                 switch (element.getName()) {
                     case PBEDocument.KEY_ELEM:
+                        PojoMemberKeyView keyView = new PojoMemberKeyView(element);
+                        keyView.append(new KeyView(element));
+                        currentRow.append(keyView);
+                        break;
                     case PBEDocument.VALUE_ELEM:
-                        currentRow.append(new PlainView(element));
+                        PBEONode node = (PBEONode) element.getAttributes().getAttribute(PBEDocument.ATTRIB_NODE_OBJ);
+                        if (node.isLeaf()) {
+                            PojoMemberValueView valueView = new PojoMemberValueView(element);
+                            valueView.append(new PlainView(element));
+                            currentRow.append(valueView);
+                        }
                         break;
                     case PBEDocument.MEMBER_ELEM:
                         currentRow = new PojoMemberView(element);
