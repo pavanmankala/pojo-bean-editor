@@ -2,6 +2,8 @@ package org.apache.pojo.beaneditor;
 
 import junit.framework.Assert;
 
+import org.apache.pojo.beaneditor.model.PBEBeanParser;
+import org.apache.pojo.beaneditor.model.PBEDocument;
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.junit.Test;
 

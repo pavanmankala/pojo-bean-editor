@@ -1,17 +1,14 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.views;
 
 import java.awt.Shape;
 
-import javax.swing.event.DocumentEvent;
 import javax.swing.text.BadLocationException;
-import javax.swing.text.BoxView;
 import javax.swing.text.Element;
 import javax.swing.text.Position;
-import javax.swing.text.View;
-import javax.swing.text.ViewFactory;
 import javax.swing.text.Position.Bias;
+import javax.swing.text.View;
 
-public class PojoBeanView extends BoxView {
+public class PojoBeanView extends AbstractPojoBeanEditorView {
 
     public PojoBeanView(Element elem) {
         super(elem, Y_AXIS);
@@ -32,10 +29,7 @@ public class PojoBeanView extends BoxView {
             totalOffset = (int) Math.min((long) totalOffset + (long) spans[i], Integer.MAX_VALUE);
         }
     }
-    @Override
-    public float getAlignment(int axis) {
-        return 0.0f;
-    }
+
     @Override
     protected void layoutMinorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
         int n = getViewCount();
@@ -50,6 +44,16 @@ public class PojoBeanView extends BoxView {
     @Override
     public Shape modelToView(int pos, Shape a, Bias b) throws BadLocationException {
         return super.modelToView(pos, a, b);
+    }
+
+    @Override
+    public int getNextVisualPositionFrom(int pos, Bias b, Shape a, int direction, Bias[] biasRet)
+            throws BadLocationException {
+        try {
+            return super.getNextVisualPositionFrom(pos, b, a, direction, biasRet);
+        } catch (Exception e) {
+            return 0;
+        }
     }
 
     @Override

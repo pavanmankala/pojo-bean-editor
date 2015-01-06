@@ -1,7 +1,7 @@
 package org.apache.pojo.beaneditor.model.outline;
 
-import org.apache.pojo.beaneditor.PBENodeValueMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
+import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 
 public class PBEONodeTyp_Array extends PBEOExtendableNode {
     public PBEONodeTyp_Array(String elemName, PojoBeanCreator creator, PBENodeValueMutator mutator, Object ctx) {

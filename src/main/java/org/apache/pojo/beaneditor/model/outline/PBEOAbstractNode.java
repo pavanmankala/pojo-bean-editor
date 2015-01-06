@@ -1,6 +1,6 @@
 package org.apache.pojo.beaneditor.model.outline;
 
-import org.apache.pojo.beaneditor.PBENodeValueMutator;
+import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 
 public abstract class PBEOAbstractNode extends PBEONode {
     public PBEOAbstractNode(String elemName, PBENodeValueMutator mutator, Object ctx) {

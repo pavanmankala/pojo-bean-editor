@@ -1,4 +1,4 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.model;
 
 import java.lang.reflect.Array;
 import java.lang.reflect.InvocationTargetException;
@@ -12,6 +12,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.pojo.beaneditor.PojoBeanCreator;
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.apache.pojo.beaneditor.model.outline.PBEOLeafNode;
 import org.apache.pojo.beaneditor.model.outline.PBEONodeTyp_Array;

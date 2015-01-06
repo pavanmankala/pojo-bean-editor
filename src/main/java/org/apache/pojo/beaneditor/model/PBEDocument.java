@@ -1,21 +1,19 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.model;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
+import javax.management.ValueExp;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
 import javax.swing.text.GapContent;
 import javax.swing.text.Segment;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleContext;
-import javax.swing.text.Utilities;
-import javax.swing.text.AbstractDocument.BranchElement;
-import javax.swing.text.AbstractDocument.DefaultDocumentEvent;
-import javax.swing.text.AbstractDocument.ElementEdit;
 
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
@@ -32,7 +30,7 @@ public class PBEDocument extends AbstractDocument {
     private Vector<Element> removed = new Vector<Element>();
     private Segment s = new Segment();
 
-    protected PBEDocument(PBEOAggregatedNode aggNode) {
+    public PBEDocument(PBEOAggregatedNode aggNode) {
         super(new GapContent());
         aggregatedNode = aggNode;
         defaultRoot = new RootElement();
@@ -49,7 +47,7 @@ public class PBEDocument extends AbstractDocument {
                 @Override
                 public void node(PBEONode node, int step) {
                     final Content content = getContent();
-                    String nodeName = node.getNodeName(), valName = "VAL";
+                    String nodeName = node.getNodeName(), valName = "\u0000";
 
                     try {
                         content.insertString(offset, nodeName);
@@ -70,7 +68,7 @@ public class PBEDocument extends AbstractDocument {
 
                 @Override
                 public void node(PBEONode node, int step) {
-                    String nodeName = node.getNodeName(), valName = "VAL";
+                    String nodeName = node.getNodeName(), valName = "\u0000";
 
                     // prepare member branch element
                     MemberBranchElement mbe = new MemberBranchElement(null);
@@ -78,7 +76,8 @@ public class PBEDocument extends AbstractDocument {
                     mbe.addAttribute(ATTRIB_STEP_NO, step);
                     mbe.addAttribute(ATTRIB_NODE_OBJ, node);
 
-                    // prepare attribute set for keyBranch and valueBranch element
+                    // prepare attribute set for keyBranch and valueBranch
+                    // element
                     StyleContext ctx = StyleContext.getDefaultStyleContext();
                     AttributeSet set = ctx.addAttribute(SimpleAttributeSet.EMPTY, ATTRIB_NODE_OBJ, node);
                     set = ctx.addAttribute(set, ATTRIB_STEP_NO, step);
@@ -143,6 +142,12 @@ public class PBEDocument extends AbstractDocument {
 
         keyElem.replace(0, 1, keys);
 
+        // if the edit is LowerBoundaryEdit
+        if (chng.getOffset() == keyElem.getEndOffset()) {
+            Element newLeaf0 = createLeafElement(valueElem, null, keyElem.getStartOffset()
+                    + node.getNodeName().length(), valueElem.getElement(0).getEndOffset());
+            valueElem.replace(0, 1, new Element[] { newLeaf0 });
+        }
 
         insertUpdatePlain(valueElem, chng, attr);
     }
@@ -154,8 +159,8 @@ public class PBEDocument extends AbstractDocument {
         int offset = chng.getOffset();
         int length = chng.getLength();
         if (offset > 0) {
-          offset -= 1;
-          length += 1;
+            offset -= 1;
+            length += 1;
         }
         int index = lineMap.getElementIndex(offset);
         Element rmCandidate = lineMap.getElement(index);
@@ -179,9 +184,9 @@ public class PBEDocument extends AbstractDocument {
             }
             if (hasBreaks) {
                 removed.addElement(rmCandidate);
-                if ((offset + length == rmOffs1) && (lastOffset != rmOffs1) &&
-                    ((index+1) < lineMap.getElementCount())) {
-                    Element e = lineMap.getElement(index+1);
+                if ((offset + length == rmOffs1) && (lastOffset != rmOffs1)
+                        && ((index + 1) < lineMap.getElementCount())) {
+                    Element e = lineMap.getElement(index + 1);
                     removed.addElement(e);
                     rmOffs1 = e.getEndOffset();
                 }
@@ -309,7 +314,7 @@ public class PBEDocument extends AbstractDocument {
     @Override
     public Element getParagraphElement(int pos) {
         Element lineMap = getDefaultRootElement();
-        return lineMap.getElement( lineMap.getElementIndex( pos ) );
+        return lineMap.getElement(lineMap.getElementIndex(pos));
     }
 
     public class RootElement extends BranchElement {

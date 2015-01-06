@@ -8,6 +8,8 @@ import javax.swing.SwingUtilities;
 
 import org.junit.Test;
 
+import com.rtsffm.tango.xmlprotocol.Rule;
+
 public class TestBeanEditor {
     @Test
     public void testOpenBeanEditor() {
@@ -38,7 +40,7 @@ public class TestBeanEditor {
                     throw new RuntimeException(e);
                 }
             }
-        }, TestBean.class)));
+        }, Rule.class)));
 
         frame.pack();
         frame.setSize(400, 600);

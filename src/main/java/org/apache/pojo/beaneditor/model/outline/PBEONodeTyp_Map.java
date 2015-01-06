@@ -6,8 +6,8 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.pojo.beaneditor.PBENodeValueMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
+import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 
 public class PBEONodeTyp_Map extends PBEOExtendableNode {
     private final Map<Integer, PBEOKeyValuePair> backingMap;

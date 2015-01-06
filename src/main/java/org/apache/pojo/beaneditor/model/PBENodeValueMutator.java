@@ -1,4 +1,4 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.model;
 
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;

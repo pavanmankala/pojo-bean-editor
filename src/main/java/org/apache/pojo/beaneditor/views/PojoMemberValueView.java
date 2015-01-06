@@ -1,24 +1,32 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.views;
 
 import java.awt.Shape;
 
 import javax.swing.event.DocumentEvent;
-import javax.swing.text.BoxView;
+import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
-import javax.swing.text.View;
 import javax.swing.text.ViewFactory;
+import javax.swing.text.Position.Bias;
 
-public class PojoMemberValueView extends BoxView {
+public class PojoMemberValueView extends AbstractPojoBeanEditorView {
     public PojoMemberValueView(Element elem) {
         super(elem, X_AXIS);
     }
-    @Override
-    public float getAlignment(int axis) {
-        return 0.0f;
-    }
+
     @Override
     protected short getLeftInset() {
         return 15;
+    }
+
+    @Override
+    protected int getViewIndexAtPosition(int pos) {
+        return 0;
+    }
+
+    @Override
+    public int getNextVisualPositionFrom(int pos, Bias b, Shape a, int direction, Bias[] biasRet)
+            throws BadLocationException {
+        return super.getNextVisualPositionFrom(pos, b, a, direction, biasRet);
     }
 
     @Override

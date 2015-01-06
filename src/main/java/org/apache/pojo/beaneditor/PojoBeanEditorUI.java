@@ -7,11 +7,16 @@ import javax.swing.text.AbstractDocument;
 import javax.swing.text.BoxView;
 import javax.swing.text.Element;
 import javax.swing.text.ElementIterator;
-import javax.swing.text.PlainView;
 import javax.swing.text.View;
 
-import org.apache.pojo.beaneditor.PojoMemberKeyView.KeyView;
+import org.apache.pojo.beaneditor.model.PBEDocument;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
+import org.apache.pojo.beaneditor.views.PojoBeanView;
+import org.apache.pojo.beaneditor.views.PojoMemberKeyView;
+import org.apache.pojo.beaneditor.views.PojoMemberValueView;
+import org.apache.pojo.beaneditor.views.PojoMemberView;
+import org.apache.pojo.beaneditor.views.plain.KeyPlainView;
+import org.apache.pojo.beaneditor.views.plain.ValuePlainView;
 
 public class PojoBeanEditorUI extends BasicTextAreaUI {
     private final PojoBeanEditor editor;
@@ -42,7 +47,7 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
             case PBEDocument.MEMBER_ELEM:
                 break;
             case AbstractDocument.ContentElementName:
-                return new PlainView(elem.getParentElement());
+                return new ValuePlainView(elem.getParentElement());
         }
 
         return null;
@@ -60,14 +65,14 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
                 switch (element.getName()) {
                     case PBEDocument.KEY_ELEM:
                         PojoMemberKeyView keyView = new PojoMemberKeyView(element);
-                        keyView.append(new KeyView(element));
+                        keyView.append(new KeyPlainView(element));
                         currentRow.append(keyView);
                         break;
                     case PBEDocument.VALUE_ELEM:
                         PBEONode node = (PBEONode) element.getAttributes().getAttribute(PBEDocument.ATTRIB_NODE_OBJ);
                         if (node.isLeaf()) {
                             PojoMemberValueView valueView = new PojoMemberValueView(element);
-                            valueView.append(new PlainView(element));
+                            valueView.append(new ValuePlainView(element));
                             currentRow.append(valueView);
                         }
                         break;

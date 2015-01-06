@@ -5,9 +5,9 @@ import java.lang.reflect.Type;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.pojo.beaneditor.PBEBeanParser;
-import org.apache.pojo.beaneditor.PBENodeValueMutator;
 import org.apache.pojo.beaneditor.PojoBeanCreator;
+import org.apache.pojo.beaneditor.model.PBEBeanParser;
+import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 
 public class PBEONodeTyp_List extends PBEOExtendableNode {
     private List<PBEONode> backingList;

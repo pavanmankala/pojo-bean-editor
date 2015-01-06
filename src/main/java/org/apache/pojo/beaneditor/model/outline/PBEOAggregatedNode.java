@@ -3,7 +3,7 @@ package org.apache.pojo.beaneditor.model.outline;
 import java.util.ArrayList;
 import java.util.List;
 
-import org.apache.pojo.beaneditor.PBENodeValueMutator;
+import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 
 public class PBEOAggregatedNode extends PBEOAbstractNode implements Visitable {
     private final List<PBEONode> elements = new ArrayList<PBEONode>(5);
