@@ -42,13 +42,6 @@ public class PBEBeanParser {
             parentClazz = parentClazz.getSuperclass();
         }
 
-        Collections.sort(declaredMethods, new Comparator<Method>() {
-            @Override
-            public int compare(Method o1, Method o2) {
-                return o1.getName().compareTo(o2.getName());
-            }
-        });
-
         for (Method m : declaredMethods) {
             final int modifier = m.getModifiers();
 

@@ -21,7 +21,7 @@ import org.apache.pojo.beaneditor.model.PBEDocument;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
 
 public class KeyPlainView extends PlainView {
-    private static Color keyColor = Color.gray; //new Color(127, 0, 85);
+    private static Color keyColor = Color.gray; // new Color(127, 0, 85);
     private static final Color keyLeafColor = new Color(106, 62, 62);
     Segment seg = new Segment();
     private final PBEONode node;
@@ -33,9 +33,12 @@ public class KeyPlainView extends PlainView {
 
     @Override
     public void paint(Graphics g, Shape a) {
-        ((Graphics2D)g).setRenderingHint(
-                RenderingHints.KEY_TEXT_ANTIALIASING,
-                RenderingHints.VALUE_TEXT_ANTIALIAS_ON);
+        Graphics2D g2d = (Graphics2D) g;
+        Color resetColor = g.getColor();
+        /*
+         * if (!node.isLeaf()) { g2d.setColor(new Color(250, 255, 250));
+         * g2d.fill(a); g2d.setColor(resetColor); }
+         */
         super.paint(g, a);
     }
 

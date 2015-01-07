@@ -1,4 +1,4 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.test;
 
 import java.io.BufferedReader;
 import java.io.IOException;

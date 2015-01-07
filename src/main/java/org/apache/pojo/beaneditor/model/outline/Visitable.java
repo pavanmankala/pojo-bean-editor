@@ -1,7 +1,7 @@
 package org.apache.pojo.beaneditor.model.outline;
 
 public interface Visitable {
-    public static interface PBEOVisitor{
+    public static interface PBEOVisitor {
         void node(PBEONode node, int step);
     }
 

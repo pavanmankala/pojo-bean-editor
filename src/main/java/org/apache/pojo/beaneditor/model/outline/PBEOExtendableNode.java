@@ -6,8 +6,8 @@ import org.apache.pojo.beaneditor.model.PBENodeValueMutator;
 public abstract class PBEOExtendableNode extends PBEOAbstractNode implements Visitable {
     protected final PojoBeanCreator extensionElementCreator;
 
-    public PBEOExtendableNode(String elemName, PojoBeanCreator extensionElementCreator,
-            PBENodeValueMutator mutator, Object ctx) {
+    public PBEOExtendableNode(String elemName, PojoBeanCreator extensionElementCreator, PBENodeValueMutator mutator,
+            Object ctx) {
         super(elemName, mutator, ctx);
         this.extensionElementCreator = extensionElementCreator;
     }

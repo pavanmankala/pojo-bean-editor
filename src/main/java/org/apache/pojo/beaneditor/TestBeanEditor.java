@@ -6,12 +6,9 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
 
-import org.junit.Test;
-
 import com.rtsffm.tango.xmlprotocol.Rule;
 
 public class TestBeanEditor {
-    @Test
     public void testOpenBeanEditor() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -19,16 +16,10 @@ public class TestBeanEditor {
                 openFrame();
             }
         });
-
-        try {
-            Thread.sleep(Long.MAX_VALUE);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 
     private void openFrame() {
-        JFrame frame = new JFrame("Test Bean Editor");
+        JFrame frame = new JFrame("Test Rule Bean Editor");
         frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         Container c = frame.getContentPane();
         c.add(new JScrollPane(new PojoBeanEditor(new PojoBeanCreator() {
@@ -40,6 +31,16 @@ public class TestBeanEditor {
                     throw new RuntimeException(e);
                 }
             }
+        }, new BeanValueTransformer() {
+            @Override
+            public String transform(Object beanMemberValue) {
+                return null;
+            }
+
+            @Override
+            public Object transform(String stringRep) {
+                return null;
+            }
         }, Rule.class)));
 
         frame.pack();
@@ -48,4 +49,7 @@ public class TestBeanEditor {
         frame.setVisible(true);
     }
 
+    public static void main(String[] args) {
+        new TestBeanEditor().testOpenBeanEditor();
+    }
 }

@@ -11,6 +11,7 @@ public class PojoMemberKeyView extends AbstractPojoBeanEditorView {
         super(elem, X_AXIS);
         leftInset = (short) (((int) getElement().getAttributes().getAttribute(PBEDocument.ATTRIB_STEP_NO)) * 10);
     }
+
     @Override
     protected void layoutMinorAxis(int targetSpan, int axis, int[] offsets, int[] spans) {
         super.layoutMinorAxis(targetSpan, axis, offsets, spans);

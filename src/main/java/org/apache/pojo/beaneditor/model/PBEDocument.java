@@ -4,17 +4,16 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Vector;
 
-import javax.management.ValueExp;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Element;
-import javax.swing.text.ElementIterator;
 import javax.swing.text.GapContent;
 import javax.swing.text.Segment;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleContext;
 
+import org.apache.pojo.beaneditor.BeanValueTransformer;
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
 import org.apache.pojo.beaneditor.model.outline.Visitable.PBEOVisitor;
@@ -29,83 +28,25 @@ public class PBEDocument extends AbstractDocument {
     private Vector<Element> added = new Vector<Element>();
     private Vector<Element> removed = new Vector<Element>();
     private Segment s = new Segment();
+    private BeanValueTransformer valueTransformer;
 
-    public PBEDocument(PBEOAggregatedNode aggNode) {
+    public PBEDocument(BeanValueTransformer bvt, PBEOAggregatedNode aggNode) {
         super(new GapContent());
         aggregatedNode = aggNode;
         defaultRoot = new RootElement();
+        this.valueTransformer = bvt;
         initContent();
     }
 
     private void initContent() {
         writeLock();
+
         try {
-            final List<BranchElement> branches = new ArrayList<BranchElement>();
-            aggregatedNode.visit(new PBEOVisitor() {
-                int offset = 0;
+            ElementGenerator generator = new ElementGenerator();
+            aggregatedNode.visit(new ContentFiller(getContent(), valueTransformer), 0);
+            aggregatedNode.visit(generator, 0);
 
-                @Override
-                public void node(PBEONode node, int step) {
-                    final Content content = getContent();
-                    String nodeName = node.getNodeName(), valName = "\u0000";
-
-                    try {
-                        content.insertString(offset, nodeName);
-                        offset += nodeName.length();
-
-                        if (node.isLeaf()) {
-                            content.insertString(offset, valName);
-                            offset += valName.length();
-                        }
-                    } catch (BadLocationException e) {
-                        e.printStackTrace();
-                    }
-                }
-            }, 0);
-
-            aggregatedNode.visit(new PBEOVisitor() {
-                int offset = 0;
-
-                @Override
-                public void node(PBEONode node, int step) {
-                    String nodeName = node.getNodeName(), valName = "\u0000";
-
-                    // prepare member branch element
-                    MemberBranchElement mbe = new MemberBranchElement(null);
-                    branches.add(mbe);
-                    mbe.addAttribute(ATTRIB_STEP_NO, step);
-                    mbe.addAttribute(ATTRIB_NODE_OBJ, node);
-
-                    // prepare attribute set for keyBranch and valueBranch
-                    // element
-                    StyleContext ctx = StyleContext.getDefaultStyleContext();
-                    AttributeSet set = ctx.addAttribute(SimpleAttributeSet.EMPTY, ATTRIB_NODE_OBJ, node);
-                    set = ctx.addAttribute(set, ATTRIB_STEP_NO, step);
-
-                    // init key and value branch elements
-                    BranchElement keyBranch = new KeyBranchElement(mbe, set), valueBranch = new ValueBranchElement(mbe,
-                            set);
-                    Element[] keyValueElems = new Element[node.isLeaf() ? 2 : 1];
-
-                    Element[] keylines = new Element[1];
-                    keylines[0] = createLeafElement(keyBranch, null, offset, offset + nodeName.length());
-                    keyBranch.replace(0, 0, keylines);
-                    offset += nodeName.length();
-                    keyValueElems[0] = keyBranch;
-
-                    if (node.isLeaf()) {
-                        Element[] valuelines = new Element[1];
-                        valuelines[0] = createLeafElement(valueBranch, null, offset, offset + valName.length());
-                        valueBranch.replace(0, 0, valuelines);
-                        offset += valName.length();
-                        keyValueElems[1] = valueBranch;
-                    }
-
-                    mbe.replace(0, 0, keyValueElems);
-                }
-            }, 0);
-            BranchElement root = (BranchElement) getDefaultRootElement();
-            root.replace(0, 0, branches.toArray(new Element[0]));
+            ((BranchElement) getDefaultRootElement()).replace(0, 0, generator.getBranches());
         } finally {
             writeUnlock();
         }
@@ -152,7 +93,7 @@ public class PBEDocument extends AbstractDocument {
         insertUpdatePlain(valueElem, chng, attr);
     }
 
-    private void insertUpdatePlain(BranchElement base, DefaultDocumentEvent chng, AttributeSet attr) {
+    private void insertUpdatePlain(ValueBranchElement base, DefaultDocumentEvent chng, AttributeSet attr) {
         removed.removeAllElements();
         added.removeAllElements();
         BranchElement lineMap = base;
@@ -168,9 +109,6 @@ public class PBEDocument extends AbstractDocument {
         int rmOffs1 = rmCandidate.getEndOffset();
         int lastOffset = rmOffs0;
         try {
-            if (s == null) {
-                s = new Segment();
-            }
             getContent().getChars(offset, length, s);
             boolean hasBreaks = false;
             for (int i = 0; i < length; i++) {
@@ -207,9 +145,32 @@ public class PBEDocument extends AbstractDocument {
         }
     }
 
-    private void removeUpdatePlain(DefaultDocumentEvent chng) {
+    protected void removeUpdate(DefaultDocumentEvent chng) {
+        BranchElement prevMemberElem = null, currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement(), nextMemberElem = null;
+        BranchElement membParent = (BranchElement) currMemberElem.getParentElement();
+        int memberIndex;
+
+        for (memberIndex = 0; memberIndex < membParent.getChildCount(); memberIndex++) {
+            if (membParent.getElement(memberIndex) == currMemberElem) {
+                break;
+            }
+        }
+
+        if (memberIndex > 0) {
+            prevMemberElem = (BranchElement) membParent.getElement(memberIndex - 1);
+        }
+
+        if (memberIndex < membParent.getChildCount() - 1) {
+            nextMemberElem = (BranchElement) membParent.getElement(memberIndex + 1);
+        }
+
+        KeyBranchElement keyElem = (KeyBranchElement) currMemberElem.getElement(0);
+        ValueBranchElement valueElem = (ValueBranchElement) currMemberElem.getElement(1);
+
+        PBEONode node = (PBEONode) keyElem.getAttribute(ATTRIB_NODE_OBJ);
+
         removed.removeAllElements();
-        BranchElement map = (BranchElement) getDefaultRootElement();
+        BranchElement map = valueElem;
         int offset = chng.getOffset();
         int length = chng.getLength();
         int line0 = map.getElementIndex(offset);
@@ -358,6 +319,108 @@ public class PBEDocument extends AbstractDocument {
         @Override
         public String getName() {
             return VALUE_ELEM;
+        }
+    }
+
+    static abstract class OffsetMaintainedVisitor implements PBEOVisitor {
+        private int offset;
+
+        public int getOffset() {
+            return offset;
+        }
+
+        protected void addToOffset(int val) {
+            offset += val;
+        }
+    }
+
+    static class ContentFiller extends OffsetMaintainedVisitor {
+        private final Content docContent;
+        private final BeanValueTransformer transformer;
+
+        public ContentFiller(Content content, BeanValueTransformer valueTransformer) {
+            docContent = content;
+            transformer = valueTransformer;
+        }
+
+        @Override
+        public void node(PBEONode node, int step) {
+            Object nodeValue;
+
+            try {
+                nodeValue = node.getNodeValue();
+            } catch (RuntimeException e) {
+                nodeValue = null;
+            }
+
+            String nodeName = node.getNodeName(), nodeValStr = nodeValue == null ? " " : transformer
+                    .transform(nodeValue);
+
+            try {
+                docContent.insertString(getOffset(), nodeName);
+                addToOffset(nodeName.length());
+
+                if (node.isLeaf()) {
+                    docContent.insertString(getOffset(), nodeValStr);
+                    addToOffset(nodeValStr.length());
+                }
+            } catch (BadLocationException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    class ElementGenerator extends OffsetMaintainedVisitor {
+        private final List<BranchElement> branches = new ArrayList<BranchElement>();
+
+        @Override
+        public void node(PBEONode node, int step) {
+            Object nodeValue;
+
+            try {
+                nodeValue = node.getNodeValue();
+            } catch (RuntimeException e) {
+                nodeValue = null;
+            }
+
+            String nodeName = node.getNodeName(), nodeValStr = nodeValue == null ? " " : valueTransformer
+                    .transform(nodeValue);
+
+            // prepare member branch element
+            MemberBranchElement mbe = new MemberBranchElement(null);
+            branches.add(mbe);
+            mbe.addAttribute(ATTRIB_STEP_NO, step);
+            mbe.addAttribute(ATTRIB_NODE_OBJ, node);
+
+            // prepare attribute set for keyBranch and valueBranch
+            // element
+            StyleContext ctx = StyleContext.getDefaultStyleContext();
+            AttributeSet set = ctx.addAttribute(SimpleAttributeSet.EMPTY, ATTRIB_NODE_OBJ, node);
+            set = ctx.addAttribute(set, ATTRIB_STEP_NO, step);
+
+            // init key and value branch elements
+            BranchElement keyBranch = new KeyBranchElement(mbe, set), valueBranch = new ValueBranchElement(mbe, set);
+            Element[] keyValueElems = new Element[node.isLeaf() ? 2 : 1];
+
+            Element[] keylines = new Element[1];
+            keylines[0] = createLeafElement(keyBranch, null, getOffset(), getOffset() + nodeName.length());
+            keyBranch.replace(0, 0, keylines);
+            addToOffset(nodeName.length());
+            keyValueElems[0] = keyBranch;
+
+            if (node.isLeaf()) {
+                Element[] valuelines = new Element[1];
+                valuelines[0] = createLeafElement(valueBranch, null, getOffset(), getOffset() + nodeValStr.length());
+                valueBranch.replace(0, 0, valuelines);
+                addToOffset(nodeValStr.length());
+                keyValueElems[1] = valueBranch;
+            }
+
+            mbe.replace(0, 0, keyValueElems);
+        }
+
+        public Element[] getBranches() {
+            return branches.toArray(new Element[0]);
         }
     }
 }

@@ -39,8 +39,8 @@ public class PBEONodeTyp_Map extends PBEOExtendableNode {
 
         newEntry.setKey("/** TODO: Insert Key here**/");
         newEntry.setValue(newValueObj);
-        PBEOMapEntryNode keyElem = new PBEOMapEntryNode("Key", null, newEntry), valueElem = new PBEOMapEntryNode(
-                "Key", null, newEntry);
+        PBEOMapEntryNode keyElem = new PBEOMapEntryNode("Key", null, newEntry), valueElem = new PBEOMapEntryNode("Key",
+                null, newEntry);
         PBEOKeyValuePair pair = new PBEOKeyValuePair(keyElem, valueElem);
 
         PBEOKeyValuePair existingValue = backingMap.remove(index);
@@ -103,8 +103,9 @@ public class PBEONodeTyp_Map extends PBEOExtendableNode {
                 mapObject.setKey(e.getKey().toString());
                 mapObject.setValue(e.getValue());
 
-                //new PBEOMapEntryElement("MapKeyValuePair", this, null, mapObject);
-                // 
+                // new PBEOMapEntryElement("MapKeyValuePair", this, null,
+                // mapObject);
+                //
             } else {
                 throw new RuntimeException("Illegal object type found in map; has to be of "
                         + valueType.getSimpleName());
@@ -126,6 +127,6 @@ public class PBEONodeTyp_Map extends PBEOExtendableNode {
     @Override
     public void visit(PBEOVisitor visitor, int step) {
         // TODO Auto-generated method stub
-        
+
     }
 }

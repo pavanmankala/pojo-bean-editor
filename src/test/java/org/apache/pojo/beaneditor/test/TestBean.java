@@ -1,4 +1,4 @@
-package org.apache.pojo.beaneditor;
+package org.apache.pojo.beaneditor.test;
 
 public class TestBean {
     private String myName;

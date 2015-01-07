@@ -43,7 +43,34 @@ public class PojoBeanView extends AbstractPojoBeanEditorView {
 
     @Override
     public Shape modelToView(int pos, Shape a, Bias b) throws BadLocationException {
-        return super.modelToView(pos, a, b);
+        boolean isBackward = (b == Position.Bias.Backward);
+        int testPos = (isBackward) ? Math.max(0, pos - 1) : pos;
+        if (isBackward && testPos < getStartOffset()) {
+            return null;
+        }
+        int vIndex = getViewIndexAtPosition(testPos);
+        if ((vIndex != -1) && (vIndex < getViewCount())) {
+            View v = getView(vIndex);
+            if (v != null
+                    && ((testPos >= v.getStartOffset() && testPos < v.getEndOffset()) || testPos == v.getEndOffset())) {
+                pos = testPos == v.getEndOffset() ? pos - 1 : pos;
+                Shape childShape = getChildAllocation(vIndex, a);
+                if (childShape == null) {
+                    // We are likely invalid, fail.
+                    return null;
+                }
+                Shape retShape = v.modelToView(pos, childShape, b);
+                if (retShape == null && v.getEndOffset() == pos) {
+                    if (++vIndex < getViewCount()) {
+                        v = getView(vIndex);
+                        retShape = v.modelToView(pos, getChildAllocation(vIndex, a), b);
+                    }
+                }
+                return retShape;
+            }
+        }
+
+        return null;
     }
 
     @Override
@@ -54,16 +81,5 @@ public class PojoBeanView extends AbstractPojoBeanEditorView {
         } catch (Exception e) {
             return 0;
         }
-    }
-
-    @Override
-    public int getViewIndex(int pos, Position.Bias b) {
-        if(b == Position.Bias.Backward) {
-            pos -= 1;
-        }
-        if ((pos >= getStartOffset()) && (pos <= getEndOffset())) {
-            return getViewIndexAtPosition(Math.min(pos, getEndOffset() - 1));
-        }
-        return -1;
     }
 }
