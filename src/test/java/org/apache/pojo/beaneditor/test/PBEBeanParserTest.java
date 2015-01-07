@@ -44,7 +44,7 @@ public class PBEBeanParserTest {
 
             @Override
             public String transform(Object beanMemberValue) {
-                return null;
+                return beanMemberValue.toString();
             }
 
             @Override

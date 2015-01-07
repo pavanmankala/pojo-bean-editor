@@ -11,8 +11,6 @@ import org.apache.pojo.beaneditor.PojoBeanCreator;
 import org.apache.pojo.beaneditor.PojoBeanEditor;
 import org.junit.Test;
 
-import com.rtsffm.tango.xmlprotocol.Rule;
-
 public class TestBeanEditor {
     @Test
     public void testOpenBeanEditor() {
@@ -47,14 +45,14 @@ public class TestBeanEditor {
 
             @Override
             public String transform(Object beanMemberValue) {
-                return null;
+                return beanMemberValue.toString();
             }
 
             @Override
             public Object transform(String stringRep) {
                 return null;
             }
-        }, Rule.class)));
+        }, TestBean.class)));
 
         frame.pack();
         frame.setSize(400, 600);

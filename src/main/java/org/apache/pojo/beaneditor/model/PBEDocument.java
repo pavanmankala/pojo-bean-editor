@@ -324,6 +324,12 @@ public class PBEDocument extends AbstractDocument {
 
     static abstract class OffsetMaintainedVisitor implements PBEOVisitor {
         private int offset;
+        protected String nodeName, nodeValStr;
+        protected final BeanValueTransformer transformer;
+
+        public OffsetMaintainedVisitor(BeanValueTransformer valueTransformer) {
+            transformer = valueTransformer;
+        }
 
         public int getOffset() {
             return offset;
@@ -332,30 +338,36 @@ public class PBEDocument extends AbstractDocument {
         protected void addToOffset(int val) {
             offset += val;
         }
+
+        @Override
+        public final void node(PBEONode node, int step) {
+            Object ObjNodeValue;
+
+            try {
+                ObjNodeValue = node.getNodeValue();
+            } catch (RuntimeException e) {
+                ObjNodeValue = null;
+            }
+
+            nodeName = node.getNodeName();
+            nodeValStr = ObjNodeValue == null ? " " : transformer.transform(ObjNodeValue) + " ";
+
+            nodeIntern(node, step);
+        }
+
+        protected abstract void nodeIntern(PBEONode node, int step);
     }
 
     static class ContentFiller extends OffsetMaintainedVisitor {
         private final Content docContent;
-        private final BeanValueTransformer transformer;
 
         public ContentFiller(Content content, BeanValueTransformer valueTransformer) {
+            super(valueTransformer);
             docContent = content;
-            transformer = valueTransformer;
         }
 
         @Override
-        public void node(PBEONode node, int step) {
-            Object nodeValue;
-
-            try {
-                nodeValue = node.getNodeValue();
-            } catch (RuntimeException e) {
-                nodeValue = null;
-            }
-
-            String nodeName = node.getNodeName(), nodeValStr = nodeValue == null ? " " : transformer
-                    .transform(nodeValue);
-
+        public void nodeIntern(PBEONode node, int step) {
             try {
                 docContent.insertString(getOffset(), nodeName);
                 addToOffset(nodeName.length());
@@ -371,21 +383,14 @@ public class PBEDocument extends AbstractDocument {
     }
 
     class ElementGenerator extends OffsetMaintainedVisitor {
+        public ElementGenerator() {
+            super(valueTransformer);
+        }
+
         private final List<BranchElement> branches = new ArrayList<BranchElement>();
 
         @Override
-        public void node(PBEONode node, int step) {
-            Object nodeValue;
-
-            try {
-                nodeValue = node.getNodeValue();
-            } catch (RuntimeException e) {
-                nodeValue = null;
-            }
-
-            String nodeName = node.getNodeName(), nodeValStr = nodeValue == null ? " " : valueTransformer
-                    .transform(nodeValue);
-
+        public void nodeIntern(PBEONode node, int step) {
             // prepare member branch element
             MemberBranchElement mbe = new MemberBranchElement(null);
             branches.add(mbe);

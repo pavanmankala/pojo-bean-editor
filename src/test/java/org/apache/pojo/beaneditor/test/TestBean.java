@@ -1,7 +1,7 @@
 package org.apache.pojo.beaneditor.test;
 
 public class TestBean {
-    private String myName;
+    private String myName = "Test Bean";
     private String myValue1;
     private ChildBean myChild;
     private String myValue2;
