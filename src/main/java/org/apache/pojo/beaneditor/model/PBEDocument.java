@@ -1,6 +1,7 @@
 package org.apache.pojo.beaneditor.model;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
@@ -17,18 +18,23 @@ import org.apache.pojo.beaneditor.BeanValueTransformer;
 import org.apache.pojo.beaneditor.model.outline.PBEOAggregatedNode;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
 import org.apache.pojo.beaneditor.model.outline.Visitable.PBEOVisitor;
+import org.fife.ui.rsyntaxtextarea.Token;
+import org.fife.ui.rsyntaxtextarea.TokenMaker;
 
 public class PBEDocument extends AbstractDocument {
-    public static final String KEY_ELEM = "key", VALUE_ELEM = "value", MEMBER_ELEM = "member", ROOT_ELEM = "root";
-    public static final String ATTRIB_STEP_NO = "PBE_STEP", ATTRIB_NODE_OBJ = "PBE_NODE_OBJ";
+    public static final String KEY_ELEM = "PBE.key", VALUE_ELEM = "PBE.value", MEMBER_ELEM = "PBE.member",
+            ROOT_ELEM = "PBE.root";
+    public static final String ATTRIB_STEP_NO = "PBE.STEP", ATTRIB_NODE_OBJ = "PBE.NODE.OBJ",
+            ATTRIB_NODE_RSYNTAX_CODE_STLYE = "PBE.RSYNTAX.STYLE";
 
     private final PBEOAggregatedNode aggregatedNode;
     private final BranchElement defaultRoot;
+    private final Vector<Element> added = new Vector<Element>();
+    private final Vector<Element> removed = new Vector<Element>();
+    private final Segment tempSeg = new Segment();
+    private final BeanValueTransformer valueTransformer;
+
     private BranchElement editingKeyOrValElem;
-    private Vector<Element> added = new Vector<Element>();
-    private Vector<Element> removed = new Vector<Element>();
-    private Segment s = new Segment();
-    private BeanValueTransformer valueTransformer;
 
     public PBEDocument(BeanValueTransformer bvt, PBEOAggregatedNode aggNode) {
         super(new GapContent());
@@ -54,7 +60,7 @@ public class PBEDocument extends AbstractDocument {
 
     @Override
     protected void insertUpdate(DefaultDocumentEvent chng, AttributeSet attr) {
-        BranchElement prevMemberElem = null, currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement(), nextMemberElem = null;
+        BranchElement currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement();
         BranchElement membParent = (BranchElement) currMemberElem.getParentElement();
         int memberIndex;
 
@@ -62,14 +68,6 @@ public class PBEDocument extends AbstractDocument {
             if (membParent.getElement(memberIndex) == currMemberElem) {
                 break;
             }
-        }
-
-        if (memberIndex > 0) {
-            prevMemberElem = (BranchElement) membParent.getElement(memberIndex - 1);
-        }
-
-        if (memberIndex < membParent.getChildCount() - 1) {
-            nextMemberElem = (BranchElement) membParent.getElement(memberIndex + 1);
         }
 
         KeyBranchElement keyElem = (KeyBranchElement) currMemberElem.getElement(0);
@@ -93,29 +91,27 @@ public class PBEDocument extends AbstractDocument {
         insertUpdatePlain(valueElem, chng, attr);
     }
 
-    private void insertUpdatePlain(ValueBranchElement base, DefaultDocumentEvent chng, AttributeSet attr) {
-        removed.removeAllElements();
-        added.removeAllElements();
-        BranchElement lineMap = base;
-        int offset = chng.getOffset();
-        int length = chng.getLength();
-        if (offset > 0) {
-            offset -= 1;
-            length += 1;
-        }
-        int index = lineMap.getElementIndex(offset);
-        Element rmCandidate = lineMap.getElement(index);
+    private void insertUpdatePlain(ValueBranchElement baseElem, DefaultDocumentEvent chng, AttributeSet attr) {
+        removed.clear();
+        added.clear();
+
+        int offset = chng.getOffset() - 1;
+        int length = chng.getLength() + 1;
+        int index = baseElem.getElementIndex(offset);
+        Element rmCandidate = baseElem.getElement(index);
         int rmOffs0 = rmCandidate.getStartOffset();
         int rmOffs1 = rmCandidate.getEndOffset();
         int lastOffset = rmOffs0;
+
         try {
-            getContent().getChars(offset, length, s);
+            getContent().getChars(offset, length, tempSeg);
             boolean hasBreaks = false;
+
             for (int i = 0; i < length; i++) {
-                char c = s.array[s.offset + i];
+                char c = tempSeg.array[tempSeg.offset + i];
                 if (c == '\n') {
                     int breakOffset = offset + i + 1;
-                    added.addElement(createLeafElement(lineMap, null, lastOffset, breakOffset));
+                    added.addElement(createLeafElement(baseElem, null, lastOffset, breakOffset));
                     lastOffset = breakOffset;
                     hasBreaks = true;
                 }
@@ -123,30 +119,34 @@ public class PBEDocument extends AbstractDocument {
             if (hasBreaks) {
                 removed.addElement(rmCandidate);
                 if ((offset + length == rmOffs1) && (lastOffset != rmOffs1)
-                        && ((index + 1) < lineMap.getElementCount())) {
-                    Element e = lineMap.getElement(index + 1);
+                        && ((index + 1) < baseElem.getElementCount())) {
+                    Element e = baseElem.getElement(index + 1);
                     removed.addElement(e);
                     rmOffs1 = e.getEndOffset();
                 }
                 if (lastOffset < rmOffs1) {
-                    added.addElement(createLeafElement(lineMap, null, lastOffset, rmOffs1));
+                    added.addElement(createLeafElement(baseElem, null, lastOffset, rmOffs1));
                 }
 
                 Element[] aelems = new Element[added.size()];
                 added.copyInto(aelems);
                 Element[] relems = new Element[removed.size()];
                 removed.copyInto(relems);
-                ElementEdit ee = new ElementEdit(lineMap, index, relems, aelems);
+                ElementEdit ee = new ElementEdit(baseElem, index, relems, aelems);
                 chng.addEdit(ee);
-                lineMap.replace(index, relems.length, aelems);
+                baseElem.replace(index, relems.length, aelems);
+            } else {
+                baseElem.refreshTokens(index);
             }
         } catch (BadLocationException e) {
             throw new Error("Internal error: " + e.toString());
         }
+
+        super.insertUpdate(chng, attr);
     }
 
     protected void removeUpdate(DefaultDocumentEvent chng) {
-        BranchElement prevMemberElem = null, currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement(), nextMemberElem = null;
+        BranchElement currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement();
         BranchElement membParent = (BranchElement) currMemberElem.getParentElement();
         int memberIndex;
 
@@ -156,18 +156,7 @@ public class PBEDocument extends AbstractDocument {
             }
         }
 
-        if (memberIndex > 0) {
-            prevMemberElem = (BranchElement) membParent.getElement(memberIndex - 1);
-        }
-
-        if (memberIndex < membParent.getChildCount() - 1) {
-            nextMemberElem = (BranchElement) membParent.getElement(memberIndex + 1);
-        }
-
-        KeyBranchElement keyElem = (KeyBranchElement) currMemberElem.getElement(0);
         ValueBranchElement valueElem = (ValueBranchElement) currMemberElem.getElement(1);
-
-        PBEONode node = (PBEONode) keyElem.getAttribute(ATTRIB_NODE_OBJ);
 
         removed.removeAllElements();
         BranchElement map = valueElem;
@@ -228,6 +217,21 @@ public class PBEDocument extends AbstractDocument {
         }
 
         super.insertString(offs, str, a);
+    }
+
+    public Token getTokenListAtLine(int pos) {
+        Element elem = getDefaultRootElement();
+
+        while (elem.getName() != VALUE_ELEM) {
+            int index = elem.getElementIndex(pos);
+            if (index == -1) {
+                return null;
+            } else {
+                elem = elem.getElement(index);
+            }
+        }
+
+        return ((ValueBranchElement) elem).getLineTokenList().get(elem.getElementIndex(pos));
     }
 
     @Override
@@ -312,8 +316,63 @@ public class PBEDocument extends AbstractDocument {
     }
 
     public class ValueBranchElement extends BranchElement {
+        private final List<Token> lineTokenList = new ArrayList<Token>(10);
+        private final TokenMaker tokenMaker;
+
         public ValueBranchElement(MemberBranchElement parent, AttributeSet a) {
             super(parent, a);
+            // TODO: Object syntaxStyle =
+            // a.getAttribute(ATTRIB_NODE_RSYNTAX_CODE_STLYE);
+            tokenMaker = new PBECodeTokenMaker();
+        }
+
+        @Override
+        public void replace(int offset, int length, Element[] elems) {
+            if (tokenMaker == null) {
+                super.replace(offset, length, elems);
+                return;
+            }
+
+            super.replace(offset, length, elems);
+            refreshTokens(offset);
+        }
+
+        public void refreshTokens(int line) {
+            if (line == 0) {
+                lineTokenList.clear();
+            } else {
+                int nowSize;
+                // start cleaning linetokenlist backwards
+                while ((nowSize = lineTokenList.size()) > line) {
+                    lineTokenList.remove(nowSize - 1);
+                }
+            }
+
+            int lastLineEndTokenType = line == 0 || lineTokenList.isEmpty() ? Token.NULL : lineTokenList.get(line - 1)
+                    .getLastPaintableToken().getType();
+            Segment tempSeg = new Segment();
+
+            for (int i = line; i < getElementCount(); i++) {
+                Element lineElem = getElement(i);
+
+                try {
+                    getDocument().getText(lineElem.getStartOffset(),
+                            lineElem.getEndOffset() - lineElem.getStartOffset(), tempSeg);
+                } catch (BadLocationException e) {
+                    throw new RuntimeException(e);
+                }
+
+                Segment newSeg = new Segment(Arrays.copyOfRange(tempSeg.array, tempSeg.offset,
+                        tempSeg.offset + tempSeg.length()), 0, tempSeg.length());
+
+                Token currLineToken = tokenMaker.getTokenList(newSeg, lastLineEndTokenType, newSeg.offset);
+                lineTokenList.add(i, currLineToken);
+                lastLineEndTokenType = currLineToken.getLastPaintableToken().getType();
+            }
+        }
+
+        public List<Token> getLineTokenList() {
+            return lineTokenList;
         }
 
         @Override

@@ -1,6 +1,7 @@
 package org.apache.pojo.beaneditor;
 
 import java.awt.Color;
+import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 
@@ -19,6 +20,7 @@ import javax.swing.text.EditorKit;
 import javax.swing.text.Element;
 import javax.swing.text.ElementIterator;
 import javax.swing.text.JTextComponent;
+import javax.swing.text.StyleContext;
 import javax.swing.text.Position.Bias;
 import javax.swing.text.View;
 
@@ -57,6 +59,19 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
             im.put(accel, name);
             am.put(name, pbeAction);
         }
+    }
+
+    @Override
+    protected void installDefaults() {
+        super.installDefaults();
+        StyleContext sc = StyleContext.getDefaultStyleContext();
+        Font font = sc.getFont("Consolas", Font.PLAIN, 13);
+
+        if (!"Consolas".equals(font.getFamily())) {
+            font = sc.getFont("Monospaced", Font.PLAIN, 13);
+        }
+
+        editor.setFont(font);
     }
 
     @Override

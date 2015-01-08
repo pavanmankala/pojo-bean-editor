@@ -5,7 +5,6 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Shape;
 
 import javax.swing.text.BadLocationException;
@@ -21,7 +20,7 @@ import org.apache.pojo.beaneditor.model.PBEDocument;
 import org.apache.pojo.beaneditor.model.outline.PBEONode;
 
 public class KeyPlainView extends PlainView {
-    private static Color keyColor = Color.gray; // new Color(127, 0, 85);
+    private static final Color keyColor = Color.gray; // new Color(127, 0, 85);
     private static final Color keyLeafColor = new Color(106, 62, 62);
     Segment seg = new Segment();
     private final PBEONode node;
@@ -52,12 +51,7 @@ public class KeyPlainView extends PlainView {
     }
 
     protected int drawSelectedText(Graphics g, int x, int y, int p0, int p1) throws BadLocationException {
-        g.setFont(g.getFont().deriveFont(Font.BOLD));
-        g.setColor(node.isLeaf() ? keyLeafColor : keyColor);
-        Document doc = getDocument();
-        doc.getText(p0, p1 - p0, seg);
-        int ret = Utilities.drawTabbedText(seg, x, y, g, this, p0);
-        return ret;
+        return drawUnselectedText(g, x, y, p0, p1);
     }
 
     @Override
