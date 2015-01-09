@@ -25,13 +25,37 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
         }
 
         backingList = new ArrayList<PBEONode>();
-        addNewBranchNode(0);
+        Object existingValue = getNodeValue();
+
+        if (existingValue != null && existingValue instanceof List) {
+            if (PBEUtils.isRepresentedAsLeaf(listElemType)) {
+                for (Object branch : ((List<?>) existingValue)) {
+                    int index = backingList.size();
+                    Object primObj = ContainerLeafNode.createLeafType(listElemType);
+                    addNodeIntern(index, primObj);
+                    PBEONode addedNode = backingList.get(index);
+                    addedNode.setNodeValue(branch);
+                }
+            } else {
+                for (Object branch : ((List<?>) existingValue)) {
+                    addNodeIntern(backingList.size(), branch);
+                }
+            }
+        }
+    }
+
+    private Object addNodeIntern(int index, Object obj) {
+        int idx = Math.min(Math.abs(index), backingList.size());
+        String nodeName = listElemType.getSimpleName() + "[" + idx + "]";
+
+        PBEOAggregatedNode typElemNode = new PBEOAggregatedNode(nodeName, null, null);
+        PBEBeanParser.parseBeanIntoNode(typElemNode, extensionElementCreator, obj);
+        backingList.add(idx, typElemNode);
+        return obj;
     }
 
     @Override
     public Object addNewBranchNode(int index) {
-        int idx = Math.min(index, backingList.size());
-        String nodeName = listElemType.getSimpleName() + "[" + idx + "]";
         Object retElem;
 
         if (!PBEUtils.isRepresentedAsLeaf(listElemType)) {
@@ -40,10 +64,7 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
             retElem = ContainerLeafNode.createLeafType(listElemType);
         }
 
-        PBEOAggregatedNode typElemNode = new PBEOAggregatedNode(nodeName, null, null);
-        PBEBeanParser.parseBeanIntoNode(typElemNode, extensionElementCreator, retElem);
-        backingList.add(idx, typElemNode);
-        return retElem;
+        return addNodeIntern(index, retElem);
     }
 
     @Override

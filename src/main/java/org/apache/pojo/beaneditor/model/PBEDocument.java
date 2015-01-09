@@ -445,16 +445,16 @@ public class PBEDocument extends AbstractDocument {
 
         @Override
         public final void node(PBEONode node, int step) {
-            Object ObjNodeValue;
+            Object objNodeValue;
 
             try {
-                ObjNodeValue = node.getNodeValue();
+                objNodeValue = node.isLeaf() ? node.getNodeValue() : null;
             } catch (RuntimeException e) {
-                ObjNodeValue = null;
+                objNodeValue = null;
             }
 
             nodeName = node.getNodeName();
-            nodeValStr = ObjNodeValue == null ? " " : transformer.transform(ObjNodeValue) + " ".replace("\t", "    ");
+            nodeValStr = objNodeValue == null ? " " : (transformer.transform(objNodeValue) + " ").replace("\t", "    ");
 
             nodeIntern(node, step);
         }
@@ -518,11 +518,31 @@ public class PBEDocument extends AbstractDocument {
             keyValueElems[0] = keyBranch;
 
             if (node.isLeaf()) {
-                Element[] valuelines = new Element[1];
-                valuelines[0] = createLeafElement(valueBranch, null, getOffset(), getOffset() + nodeValStr.length());
-                valueBranch.replace(0, 0, valuelines);
-                addToOffset(nodeValStr.length());
-                keyValueElems[1] = valueBranch;
+                int strLen = nodeValStr.length();
+                added.clear();
+                try {
+                    getContent().getChars(getOffset(), strLen, tempSeg);
+                    int localOffset = getOffset();
+                    int breakOffset = localOffset;
+                    for (int i = 0; i < strLen; i++) {
+                        char c = tempSeg.array[tempSeg.offset + i];
+                        if (c == '\n') {
+                            added.add(createLeafElement(valueBranch, null, breakOffset, localOffset + i + 1));
+                            breakOffset = localOffset + i + 1;
+                        }
+                    }
+
+                    if (localOffset + strLen > breakOffset) {
+                        added.add(createLeafElement(valueBranch, null, breakOffset, localOffset + strLen));
+                    }
+                    Element[] aelems = new Element[added.size()];
+                    added.copyInto(aelems);
+                    valueBranch.replace(0, 0, aelems);
+                    addToOffset(strLen);
+                    keyValueElems[1] = valueBranch;
+                } catch (BadLocationException e) {
+                    e.printStackTrace();
+                }
             }
 
             mbe.replace(0, 0, keyValueElems);
