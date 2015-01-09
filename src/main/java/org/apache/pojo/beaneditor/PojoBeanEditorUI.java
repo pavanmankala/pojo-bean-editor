@@ -4,38 +4,43 @@ import java.awt.Color;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
+import java.awt.Shape;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
 import javax.swing.InputMap;
 import javax.swing.JComponent;
 import javax.swing.KeyStroke;
+import javax.swing.event.CaretEvent;
+import javax.swing.event.CaretListener;
+import javax.swing.event.ChangeEvent;
+import javax.swing.event.ChangeListener;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicTextAreaUI;
-import javax.swing.text.AbstractDocument;
+import javax.swing.text.AbstractDocument.BranchElement;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
-import javax.swing.text.Caret;
 import javax.swing.text.EditorKit;
 import javax.swing.text.Element;
-import javax.swing.text.ElementIterator;
+import javax.swing.text.Highlighter;
+import javax.swing.text.Highlighter.HighlightPainter;
 import javax.swing.text.JTextComponent;
-import javax.swing.text.StyleContext;
 import javax.swing.text.Position.Bias;
+import javax.swing.text.StyleContext;
 import javax.swing.text.View;
 
 import org.apache.pojo.beaneditor.model.PBEDocument;
-import org.apache.pojo.beaneditor.model.outline.PBEONode;
+import org.apache.pojo.beaneditor.model.PBEDocument.MemberBranchElement;
+import org.apache.pojo.beaneditor.model.PBEDocument.ValueBranchElement;
 import org.apache.pojo.beaneditor.views.PojoBeanView;
-import org.apache.pojo.beaneditor.views.PojoMemberKeyView;
-import org.apache.pojo.beaneditor.views.PojoMemberValueView;
-import org.apache.pojo.beaneditor.views.PojoMemberView;
-import org.apache.pojo.beaneditor.views.plain.KeyPlainView;
-import org.apache.pojo.beaneditor.views.plain.ValuePlainView;
 
 public class PojoBeanEditorUI extends BasicTextAreaUI {
     private static final PBEEditorKit defaultKit = new PBEEditorKit();
     private final PojoBeanEditor editor;
+    private final HighlightPainter editableLineHighlighter = new EditableAreaHighlighter();
+
+    private MemberBranchElement highlightBranchElement;
+    private Object previousHighlightTag;
 
     public static ComponentUI createUI(JComponent ta) {
         return new PojoBeanEditorUI((PojoBeanEditor) ta);
@@ -75,6 +80,48 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
     }
 
     @Override
+    protected void installListeners() {
+        super.installListeners();
+        editor.getCaret().addChangeListener(new ChangeListener() {
+            @Override
+            public void stateChanged(ChangeEvent e) {
+                caretUpdated();
+            }
+        });
+    }
+
+    protected void caretUpdated() {
+        PBEDocument doc = (PBEDocument) editor.getDocument();
+        BranchElement be = (BranchElement) doc.getDefaultRootElement();
+        Highlighter highlighter = editor.getHighlighter();
+
+        if (be != null && be.getName() != PBEDocument.MEMBER_ELEM) {
+            int index = be.getElementIndex(editor.getCaretPosition());
+            be = (BranchElement) be.getElement(index);
+        }
+
+        if (previousHighlightTag != null) {
+            highlighter.removeHighlight(previousHighlightTag);
+            previousHighlightTag = null;
+        }
+
+        if (be == null) {
+            return;
+        }
+
+        highlightBranchElement = (MemberBranchElement) be;
+
+        try {
+            previousHighlightTag = highlighter.addHighlight(editor.getCaretPosition(), be.getEndOffset(),
+                    editableLineHighlighter);
+        } catch (BadLocationException e1) {
+            throw new RuntimeException(e1);
+        }
+
+        editor.repaint();
+    }
+
+    @Override
     public EditorKit getEditorKit(JTextComponent tc) {
         if (tc == editor) {
             return defaultKit;
@@ -88,90 +135,39 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
             return new BoxView(elem, BoxView.X_AXIS);
         }
 
-        PBEDocument pbeDoc = (PBEDocument) elem.getDocument();
+        caretUpdated();
 
-        switch (elem.getName()) {
-            case PBEDocument.KEY_ELEM:
-                break;
-            case PBEDocument.VALUE_ELEM:
-                break;
-            case PBEDocument.ROOT_ELEM:
-                return new PojoTableView(elem);
-            case PBEDocument.MEMBER_ELEM:
-                break;
-            case AbstractDocument.ContentElementName:
-                return new ValuePlainView(elem.getParentElement());
+        if (elem.getName() == PBEDocument.ROOT_ELEM) {
+            return new PojoBeanView(elem);
         }
 
         return null;
     }
 
-    @Override
-    protected void paintBackground(Graphics g) {
-        super.paintBackground(g);
-        paintCurrentLineHighlight(g, editor.getVisibleRect());
-    }
+    class EditableAreaHighlighter implements HighlightPainter {
+        private final Color highlightColor = new Color(255, 255, 170);
 
-    protected void paintCurrentLineHighlight(Graphics g, Rectangle visibleRect) {
-        if (visibleRect != null) {
-            return;
-        }
-
-        try {
-            Caret caret = editor.getCaret();
-
-            Color highlight = new Color(255, 255, 170);
-
-            g.setColor(highlight);
-
-            View parentContainedView = null, containedView = getRootView(editor);
-            int index = 0;
-
-            while (containedView.getElement().getName() != PBEDocument.KEY_ELEM
-                    && containedView.getElement().getName() != PBEDocument.VALUE_ELEM) {
-                index = containedView.getViewIndex(caret.getDot(), Bias.Forward);
-                parentContainedView = containedView;
-                containedView = containedView.getView(index);
-            }
-            Rectangle viewShape = (Rectangle) parentContainedView.getChildAllocation(index, new Rectangle());
-            Rectangle lineShape = (Rectangle) getRootView(editor).modelToView(caret.getDot(), new Rectangle(),
-                    Bias.Forward);
-            g.fillRect(viewShape.x, lineShape.y, visibleRect.width, lineShape.height);
-        } catch (BadLocationException e) {
-            e.printStackTrace();
-        }
-
-    }
-
-    class PojoTableView extends PojoBeanView {
-        public PojoTableView(Element elem) {
-            super(elem);
-            ElementIterator iterator = new ElementIterator(elem);
-
-            Element element = iterator.next(); // root element
-            BoxView currentRow = null;
-
-            while ((element = iterator.next()) != null) {
-                switch (element.getName()) {
-                    case PBEDocument.KEY_ELEM:
-                        PojoMemberKeyView keyView = new PojoMemberKeyView(element);
-                        keyView.append(new KeyPlainView(element));
-                        currentRow.append(keyView);
-                        break;
-                    case PBEDocument.VALUE_ELEM:
-                        PBEONode node = (PBEONode) element.getAttributes().getAttribute(PBEDocument.ATTRIB_NODE_OBJ);
-                        if (node.isLeaf()) {
-                            PojoMemberValueView valueView = new PojoMemberValueView(element);
-                            valueView.append(new ValuePlainView(element));
-                            currentRow.append(valueView);
-                        }
-                        break;
-                    case PBEDocument.MEMBER_ELEM:
-                        currentRow = new PojoMemberView(element);
-                        append(currentRow);
-                        break;
+        @Override
+        public void paint(Graphics g, int p0, int p1, Shape bounds, JTextComponent c) {
+            Rectangle visibleRect = (Rectangle) bounds;
+            try {
+                if (highlightBranchElement == null || highlightBranchElement.getElementCount() != 2) {
+                    return;
                 }
+
+                g.setColor(highlightColor);
+
+                ValueBranchElement vbe = (ValueBranchElement) highlightBranchElement.getElement(1);
+                int valueLine = vbe.getElementIndex(Math.max(vbe.getStartOffset(), editor.getCaretPosition()));
+                Element valueLeafElem = vbe.getElement(valueLine);
+
+                Rectangle s = (Rectangle) getRootView(editor).modelToView(valueLeafElem.getStartOffset(), bounds,
+                        Bias.Forward);
+                g.fillRect(s.x, s.y, visibleRect.width, s.height);
+            } catch (BadLocationException e) {
+                e.printStackTrace();
             }
         }
+
     }
 }

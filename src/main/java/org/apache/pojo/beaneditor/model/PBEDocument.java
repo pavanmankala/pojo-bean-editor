@@ -5,6 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Vector;
 
+import javax.swing.event.DocumentEvent;
 import javax.swing.text.AbstractDocument;
 import javax.swing.text.AttributeSet;
 import javax.swing.text.BadLocationException;
@@ -175,18 +176,42 @@ public class PBEDocument extends AbstractDocument {
     }
 
     @Override
+    protected void fireInsertUpdate(DocumentEvent e) {
+        refreshTokens(e);
+        super.fireInsertUpdate(e);
+    }
+
+    @Override
+    protected void fireRemoveUpdate(DocumentEvent e) {
+        refreshTokens(e);
+        super.fireRemoveUpdate(e);
+    }
+
+    @Override
+    protected void fireChangedUpdate(DocumentEvent e) {
+        refreshTokens(e);
+        super.fireChangedUpdate(e);
+    }
+
+    public void refreshTokens(DocumentEvent e) {
+        editingKeyOrValElem = getElementAt(e.getOffset());
+        if (editingKeyOrValElem != null) {
+            ValueBranchElement valueElem = (ValueBranchElement) editingKeyOrValElem;
+
+            int offset = e.getOffset();
+            int line0 = valueElem.getElementIndex(offset);
+            valueElem.refreshTokens(line0);
+        }
+    }
+
+    @Override
     protected void postRemoveUpdate(DefaultDocumentEvent chng) {
         super.postRemoveUpdate(chng);
-        ValueBranchElement valueElem = (ValueBranchElement) editingKeyOrValElem;
-
-        int offset = chng.getOffset();
-        int line0 = valueElem.getElementIndex(offset);
-        valueElem.refreshTokens(line0);
+        refreshTokens(chng);
     }
 
     @Override
     public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
-        str = str.replace("\t", "    ");
         if (offs == 0) {
             return;
         }
@@ -195,7 +220,7 @@ public class PBEDocument extends AbstractDocument {
         String name = editingKeyOrValElem.getName();
 
         if (name == KEY_ELEM) {
-            if (offs > editingKeyOrValElem.getStartOffset() && offs < editingKeyOrValElem.getEndOffset()) {
+            if (offs >= editingKeyOrValElem.getStartOffset() && offs < editingKeyOrValElem.getEndOffset()) {
                 // Key is being edited -> Not allowed
                 return;
             }
@@ -218,7 +243,7 @@ public class PBEDocument extends AbstractDocument {
             }
         }
 
-        super.insertString(offs, str, a);
+        super.insertString(offs, str.replace("\t", "    "), a);
     }
 
     public Token getTokenListAtLine(int pos) {

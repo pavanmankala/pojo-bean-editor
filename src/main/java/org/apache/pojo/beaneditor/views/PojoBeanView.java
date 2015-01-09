@@ -3,15 +3,48 @@ package org.apache.pojo.beaneditor.views;
 import java.awt.Shape;
 
 import javax.swing.text.BadLocationException;
+import javax.swing.text.BoxView;
 import javax.swing.text.Element;
+import javax.swing.text.ElementIterator;
 import javax.swing.text.Position;
 import javax.swing.text.Position.Bias;
 import javax.swing.text.View;
+
+import org.apache.pojo.beaneditor.model.PBEDocument;
+import org.apache.pojo.beaneditor.model.outline.PBEONode;
+import org.apache.pojo.beaneditor.views.plain.KeyPlainView;
+import org.apache.pojo.beaneditor.views.plain.ValuePlainView;
 
 public class PojoBeanView extends AbstractPojoBeanEditorView {
 
     public PojoBeanView(Element elem) {
         super(elem, Y_AXIS);
+        ElementIterator iterator = new ElementIterator(elem);
+
+        Element element = iterator.next(); // root element
+        BoxView currentRow = null;
+
+        while ((element = iterator.next()) != null) {
+            switch (element.getName()) {
+                case PBEDocument.KEY_ELEM:
+                    PojoMemberKeyView keyView = new PojoMemberKeyView(element);
+                    keyView.append(new KeyPlainView(element));
+                    currentRow.append(keyView);
+                    break;
+                case PBEDocument.VALUE_ELEM:
+                    PBEONode node = (PBEONode) element.getAttributes().getAttribute(PBEDocument.ATTRIB_NODE_OBJ);
+                    if (node.isLeaf()) {
+                        PojoMemberValueView valueView = new PojoMemberValueView(element);
+                        valueView.append(new ValuePlainView(element));
+                        currentRow.append(valueView);
+                    }
+                    break;
+                case PBEDocument.MEMBER_ELEM:
+                    currentRow = new PojoMemberView(element);
+                    append(currentRow);
+                    break;
+            }
+        }
     }
 
     @Override
