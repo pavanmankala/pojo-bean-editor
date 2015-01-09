@@ -4,6 +4,7 @@ import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
+import java.awt.Toolkit;
 import java.awt.font.FontRenderContext;
 import java.lang.reflect.Method;
 import java.util.HashMap;
@@ -15,7 +16,6 @@ import javax.swing.undo.UndoManager;
 
 import org.apache.pojo.beaneditor.model.PBEBeanParser;
 import org.apache.pojo.beaneditor.model.PBEDocument;
-import org.fife.ui.rsyntaxtextarea.RSyntaxUtilities;
 
 public class PojoBeanEditor extends JTextArea {
     private final UndoManager undoManager = new UndoManager();
@@ -31,9 +31,9 @@ public class PojoBeanEditor extends JTextArea {
     }
 
     protected void init() {
-        // getCaret().setBlinkRate(0);
+        getCaret().setBlinkRate(0);
         getDocument().addUndoableEditListener(undoManager);
-        setDefaultAntiAliasingState();
+        calculateRenderingHints();
     }
 
     public void updateUI() {
@@ -51,8 +51,8 @@ public class PojoBeanEditor extends JTextArea {
         return g2d;
     }
 
-    private final void setDefaultAntiAliasingState() {
-        aaHints = RSyntaxUtilities.getDesktopAntiAliasHints();
+    private final void calculateRenderingHints() {
+        aaHints = (Map<?, ?>) Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
         if (aaHints == null) {
             Map<RenderingHints.Key, Object> temp = new HashMap<RenderingHints.Key, Object>();
             JLabel label = new JLabel();
@@ -64,9 +64,8 @@ public class PojoBeanEditor extends JTextArea {
                 m = FontRenderContext.class.getMethod("getAntiAliasingHint");
                 hint = m.invoke(frc);
             } catch (RuntimeException re) {
-                throw re; // FindBugs
+                throw re;
             } catch (Exception e) {
-                // Swallow, either Java 1.5, or running in an applet
             }
 
             if (hint == null) {

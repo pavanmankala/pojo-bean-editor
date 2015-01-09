@@ -4,27 +4,17 @@ import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.Rectangle;
-import java.awt.RenderingHints;
 import java.awt.Shape;
 
 import javax.swing.plaf.basic.BasicTextUI.BasicHighlighter;
-import javax.swing.text.BadLocationException;
-import javax.swing.text.Document;
 import javax.swing.text.Element;
-import javax.swing.text.PlainView;
-import javax.swing.text.Position;
-import javax.swing.text.Position.Bias;
-import javax.swing.text.Segment;
-import javax.swing.text.Utilities;
 
 import org.apache.pojo.beaneditor.PojoBeanEditor;
+import org.apache.pojo.beaneditor.model.PBEDocument.ValueBranchElement;
 import org.fife.ui.rsyntaxtextarea.Token;
 import org.fife.ui.rsyntaxtextarea.TokenImpl;
-import org.fife.ui.rsyntaxtextarea.modes.JavaTokenMaker;
 
-public class ValuePlainView extends PlainView {
-    Segment seg = new Segment();
-    JavaTokenMaker tm = new JavaTokenMaker();
+public class ValuePlainView extends PojoPlainViewBase {
     PBETokenPainter tp = new PBETokenPainter();
     private int tabSize;
     private int tabBase;
@@ -77,11 +67,10 @@ public class ValuePlainView extends PlainView {
         // System.err.println("Painting lines: " + linesAbove + " to " +
         // (endLine-1));
 
-        PBETokenPainter painter = tp;
         int line = linesAbove;
+        ValueBranchElement vbe = (ValueBranchElement) getElement();
         // int count = 0;
         while (y < clip.y + clip.height + ascent && line < lineCount) {
-
             Element lineElement = map.getElement(line);
             int startOffset = lineElement.getStartOffset();
             // int endOffset = (line==lineCount ? lineElement.getEndOffset()-1 :
@@ -89,13 +78,7 @@ public class ValuePlainView extends PlainView {
             int endOffset = lineElement.getEndOffset() - 1; // Why always "-1"?
             h.paintLayeredHighlights(g2d, startOffset, endOffset, a, host, this);
 
-            // Paint a line of text.
-            try {
-                getDocument().getText(startOffset, endOffset - startOffset, seg);
-            } catch (BadLocationException e) {
-                e.printStackTrace();
-            }
-            token = tm.getTokenList(seg, Token.NULL, 0);
+            token = vbe.getLineTokenList().get(line);
             if (selStart == selEnd || (startOffset >= selEnd || endOffset < selStart)) {
                 drawLine(token, g2d, x, y);
             } else {
@@ -190,43 +173,4 @@ public class ValuePlainView extends PlainView {
 
     }
 
-    @Override
-    public int viewToModel(float fx, float fy, Shape a, Bias[] bias) {
-        bias[0] = Position.Bias.Forward;
-
-        Rectangle alloc = a.getBounds();
-        Document doc = getDocument();
-        int x = (int) fx;
-        int y = (int) fy;
-        if (y < alloc.y) {
-            return getStartOffset();
-        } else if (y > alloc.y + alloc.height) {
-            return getEndOffset() - 1;
-        } else {
-            Element map = getElement();
-            int fontHeight = metrics.getHeight();
-            int lineIndex = (fontHeight > 0 ? Math.abs((y - alloc.y) / fontHeight) : map.getElementCount() - 1);
-            if (lineIndex >= map.getElementCount()) {
-                return getEndOffset() - 1;
-            }
-            Element line = map.getElement(lineIndex);
-            if (x < alloc.x) {
-                return line.getStartOffset();
-            } else if (x > alloc.x + alloc.width) {
-                return line.getEndOffset() - 1;
-            } else {
-                try {
-                    int p0 = line.getStartOffset();
-                    int p1 = line.getEndOffset() - 1;
-                    doc.getText(p0, p1 - p0, seg);
-                    // tabBase = alloc.x;
-                    int offs = p0 + Utilities.getTabbedTextOffset(seg, metrics, alloc.x, x, this, p0);
-                    return offs;
-                } catch (BadLocationException e) {
-                    // should not happen
-                    return -1;
-                }
-            }
-        }
-    }
 }

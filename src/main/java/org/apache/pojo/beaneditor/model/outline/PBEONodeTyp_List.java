@@ -30,17 +30,20 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
 
     @Override
     public Object addNewBranchNode(int index) {
+        int idx = Math.min(index, backingList.size());
+        String nodeName = listElemType.getSimpleName() + "[" + idx + "]";
+        Object retElem;
+
         if (!PBEUtils.isRepresentedAsLeaf(listElemType)) {
-            Object retElem = extensionElementCreator.createPojoBean(listElemType);
-            int idx = Math.min(index, backingList.size());
-            PBEOAggregatedNode typElemNode = new PBEOAggregatedNode(listElemType.getSimpleName() + "[" + idx + "]",
-                    null, null);
-            PBEBeanParser.parseBeanIntoNode(typElemNode, extensionElementCreator, retElem);
-            backingList.add(idx, typElemNode);
-            return retElem;
+            retElem = extensionElementCreator.createPojoBean(listElemType);
+        } else {
+            retElem = ContainerLeafNode.createLeafType(listElemType);
         }
 
-        return null;
+        PBEOAggregatedNode typElemNode = new PBEOAggregatedNode(nodeName, null, null);
+        PBEBeanParser.parseBeanIntoNode(typElemNode, extensionElementCreator, retElem);
+        backingList.add(idx, typElemNode);
+        return retElem;
     }
 
     @Override

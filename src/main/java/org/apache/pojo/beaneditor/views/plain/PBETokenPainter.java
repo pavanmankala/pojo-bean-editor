@@ -59,7 +59,6 @@ class PBETokenPainter {
 
     protected float paintImpl(Token token, Graphics2D g, float x, float y, TabExpander e, float clipStart,
             boolean selected) {
-
         int origX = (int) x;
         int textOffs = token.getTextOffset();
         char[] text = token.getTextArray();

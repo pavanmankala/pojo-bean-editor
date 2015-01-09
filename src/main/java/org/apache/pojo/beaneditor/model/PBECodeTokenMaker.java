@@ -4,6 +4,7 @@ import javax.swing.text.Segment;
 
 import org.fife.ui.rsyntaxtextarea.Token;
 import org.fife.ui.rsyntaxtextarea.TokenImpl;
+import org.fife.ui.rsyntaxtextarea.modes.CPlusPlusTokenMaker;
 import org.fife.ui.rsyntaxtextarea.modes.JavaTokenMaker;
 
 public class PBECodeTokenMaker extends JavaTokenMaker {

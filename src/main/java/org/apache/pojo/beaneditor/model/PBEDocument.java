@@ -20,6 +20,7 @@ import org.apache.pojo.beaneditor.model.outline.PBEONode;
 import org.apache.pojo.beaneditor.model.outline.Visitable.PBEOVisitor;
 import org.fife.ui.rsyntaxtextarea.Token;
 import org.fife.ui.rsyntaxtextarea.TokenMaker;
+import org.fife.ui.rsyntaxtextarea.TokenTypes;
 
 public class PBEDocument extends AbstractDocument {
     public static final String KEY_ELEM = "PBE.key", VALUE_ELEM = "PBE.value", MEMBER_ELEM = "PBE.member",
@@ -146,17 +147,7 @@ public class PBEDocument extends AbstractDocument {
     }
 
     protected void removeUpdate(DefaultDocumentEvent chng) {
-        BranchElement currMemberElem = (BranchElement) editingKeyOrValElem.getParentElement();
-        BranchElement membParent = (BranchElement) currMemberElem.getParentElement();
-        int memberIndex;
-
-        for (memberIndex = 0; memberIndex < membParent.getChildCount(); memberIndex++) {
-            if (membParent.getElement(memberIndex) == currMemberElem) {
-                break;
-            }
-        }
-
-        ValueBranchElement valueElem = (ValueBranchElement) currMemberElem.getElement(1);
+        ValueBranchElement valueElem = (ValueBranchElement) editingKeyOrValElem;
 
         removed.removeAllElements();
         BranchElement map = valueElem;
@@ -184,7 +175,18 @@ public class PBEDocument extends AbstractDocument {
     }
 
     @Override
+    protected void postRemoveUpdate(DefaultDocumentEvent chng) {
+        super.postRemoveUpdate(chng);
+        ValueBranchElement valueElem = (ValueBranchElement) editingKeyOrValElem;
+
+        int offset = chng.getOffset();
+        int line0 = valueElem.getElementIndex(offset);
+        valueElem.refreshTokens(line0);
+    }
+
+    @Override
     public void insertString(int offs, String str, AttributeSet a) throws BadLocationException {
+        str = str.replace("\t", "    ");
         if (offs == 0) {
             return;
         }
@@ -348,8 +350,7 @@ public class PBEDocument extends AbstractDocument {
                 }
             }
 
-            int lastLineEndTokenType = line == 0 || lineTokenList.isEmpty() ? Token.NULL : lineTokenList.get(line - 1)
-                    .getLastPaintableToken().getType();
+            int lastLineEndTokenType = getPreviousLineLastTokenType(line);
             Segment tempSeg = new Segment();
 
             for (int i = line; i < getElementCount(); i++) {
@@ -367,7 +368,26 @@ public class PBEDocument extends AbstractDocument {
 
                 Token currLineToken = tokenMaker.getTokenList(newSeg, lastLineEndTokenType, newSeg.offset);
                 lineTokenList.add(i, currLineToken);
-                lastLineEndTokenType = currLineToken.getLastPaintableToken().getType();
+                lastLineEndTokenType = getPreviousLineLastTokenType(currLineToken.getLastPaintableToken());
+            }
+        }
+
+        int getPreviousLineLastTokenType(int line) {
+            if (line == 0 || lineTokenList.isEmpty()) {
+                return TokenTypes.NULL;
+            } else {
+                return getPreviousLineLastTokenType(lineTokenList.get(line - 1).getLastPaintableToken());
+            }
+        }
+
+        int getPreviousLineLastTokenType(Token prevLineLastPaintableToken) {
+            switch (prevLineLastPaintableToken.getType()) {
+                case TokenTypes.COMMENT_DOCUMENTATION:
+                case TokenTypes.COMMENT_MULTILINE:
+                    return prevLineLastPaintableToken.getNextToken() == null ? prevLineLastPaintableToken.getType()
+                            : TokenTypes.NULL;
+                default:
+                    return TokenTypes.NULL;
             }
         }
 
@@ -409,7 +429,7 @@ public class PBEDocument extends AbstractDocument {
             }
 
             nodeName = node.getNodeName();
-            nodeValStr = ObjNodeValue == null ? " " : transformer.transform(ObjNodeValue) + " ";
+            nodeValStr = ObjNodeValue == null ? " " : transformer.transform(ObjNodeValue) + " ".replace("\t", "    ");
 
             nodeIntern(node, step);
         }

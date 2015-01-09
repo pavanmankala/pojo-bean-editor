@@ -6,6 +6,8 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +41,13 @@ public class PBEBeanParser {
             declaredMethods.addAll(Arrays.asList(parentClazz.getDeclaredMethods()));
             parentClazz = parentClazz.getSuperclass();
         }
+
+        Collections.sort(declaredMethods, new Comparator<Method>() {
+            @Override
+            public int compare(Method o1, Method o2) {
+                return o1.getName().compareTo(o2.getName());
+            }
+        });
 
         for (Method m : declaredMethods) {
             final int modifier = m.getModifiers();
