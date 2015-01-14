@@ -14,7 +14,7 @@ import com.rtsffm.tango.xmlprotocol.RuleDefinition;
 import com.rtsffm.tango.xmlprotocol.RuleInterface;
 import com.rtsffm.tango.xmlprotocol.RuleParameter;
 
-public class TestBeanEditor {
+public class PojoBeanEditorDemo {
     public void testOpenBeanEditor() {
         SwingUtilities.invokeLater(new Runnable() {
             @Override
@@ -138,6 +138,6 @@ public class TestBeanEditor {
     }
 
     public static void main(String[] args) {
-        new TestBeanEditor().testOpenBeanEditor();
+        new PojoBeanEditorDemo().testOpenBeanEditor();
     }
 }

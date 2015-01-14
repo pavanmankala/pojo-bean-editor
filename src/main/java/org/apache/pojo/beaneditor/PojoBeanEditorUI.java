@@ -1,10 +1,13 @@
 package org.apache.pojo.beaneditor;
 
 import java.awt.Color;
+import java.awt.Cursor;
 import java.awt.Font;
 import java.awt.Graphics;
 import java.awt.Rectangle;
 import java.awt.Shape;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
 
 import javax.swing.Action;
 import javax.swing.ActionMap;
@@ -18,6 +21,7 @@ import javax.swing.plaf.basic.BasicTextAreaUI;
 import javax.swing.text.AbstractDocument.BranchElement;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.BoxView;
+import javax.swing.text.Caret;
 import javax.swing.text.EditorKit;
 import javax.swing.text.Element;
 import javax.swing.text.Highlighter;
@@ -31,6 +35,8 @@ import org.apache.pojo.beaneditor.model.PBEDocument;
 import org.apache.pojo.beaneditor.model.PBEDocument.MemberBranchElement;
 import org.apache.pojo.beaneditor.model.PBEDocument.ValueBranchElement;
 import org.apache.pojo.beaneditor.views.PojoBeanView;
+import org.apache.pojo.beaneditor.views.PojoMemberKeyView;
+import org.apache.pojo.beaneditor.views.PojoMemberView;
 
 public class PojoBeanEditorUI extends BasicTextAreaUI {
     private static final PBEEditorKit defaultKit = new PBEEditorKit();
@@ -47,6 +53,11 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
     public PojoBeanEditorUI(PojoBeanEditor pojoBeanEditor) {
         super();
         this.editor = pojoBeanEditor;
+    }
+
+    @Override
+    protected Caret createCaret() {
+        return new PojoBeanEditorCaret();
     }
 
     @Override
@@ -79,13 +90,74 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
 
     @Override
     protected void installListeners() {
-        super.installListeners();
         editor.getCaret().addChangeListener(new ChangeListener() {
             @Override
             public void stateChanged(ChangeEvent e) {
                 caretUpdated();
             }
         });
+
+        MouseAdapter ma = new MouseAdapter() {
+            @Override
+            public void mouseMoved(MouseEvent e) {
+                if (isCursorOnFold(e)) {
+                    e.getComponent().setCursor(Cursor.getDefaultCursor());
+                } else {
+                    e.getComponent().setCursor(Cursor.getPredefinedCursor(Cursor.TEXT_CURSOR));
+                }
+            }
+
+            @Override
+            public void mouseClicked(MouseEvent e) {
+                if (e.getClickCount() == 1) {
+                    if (isCursorOnFold(e) && currentPmkv != null) {
+                        currentPmkv.toggleFold();
+                        editor.repaint();
+                    }
+                }
+            }
+        };
+
+        // editor.addMouseListener(ma);
+        // editor.addMouseMotionListener(ma);
+        super.installListeners();
+    }
+
+    private PojoMemberKeyView currentPmkv;
+
+    protected boolean isCursorOnFold(MouseEvent e) {
+        Rectangle keyBounds = new Rectangle();
+        currentPmkv = getPojoMemberKeyViewAt(e, keyBounds);
+
+        if (currentPmkv == null || currentPmkv.getNode().isLeaf()) {
+            return false;
+        } else {
+            keyBounds.x += currentPmkv.getStepNo() * 10;
+            keyBounds.width = 16;
+
+            return keyBounds.contains(e.getX(), e.getY());
+        }
+    }
+
+    protected PojoMemberKeyView getPojoMemberKeyViewAt(MouseEvent e, Rectangle keyBounds) {
+        Shape currentAllocation = getRootView(editor).getChildAllocation(0, new Rectangle(editor.getSize()));
+        View v = getRootView(editor);
+
+        while (!(v instanceof PojoMemberView)) {
+            int viewIndex = v.getViewIndex(e.getX(), e.getY(), currentAllocation);
+
+            if (viewIndex == -1) {
+                return null;
+            } else {
+                currentAllocation = v.getChildAllocation(viewIndex, currentAllocation);
+            }
+
+            v = v.getView(viewIndex);
+        }
+
+        currentAllocation = v.getChildAllocation(0, currentAllocation);
+        keyBounds.setBounds((Rectangle) currentAllocation);
+        return (PojoMemberKeyView) v.getView(0);
     }
 
     protected void caretUpdated() {
@@ -159,6 +231,7 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
                 int valueLine = vbe.getElementIndex(Math.max(vbe.getStartOffset(), editor.getCaretPosition()));
                 Element valueLeafElem = vbe.getElement(valueLine);
 
+                editor.getDocument().getText(p0, p1-p0);
                 Rectangle s = (Rectangle) getRootView(editor).modelToView(valueLeafElem.getStartOffset(), bounds,
                         Bias.Forward);
                 g.fillRect(s.x, s.y, visibleRect.width, s.height);
@@ -166,6 +239,19 @@ public class PojoBeanEditorUI extends BasicTextAreaUI {
                 e.printStackTrace();
             }
         }
+    }
 
+    class PojoBeanEditorCaret extends BasicCaret {
+        @Override
+        protected void positionCaret(MouseEvent e) {
+            if (!isCursorOnFold(e)) {
+                super.positionCaret(e);
+            }
+        }
+
+        @Override
+        protected void moveCaret(MouseEvent e) {
+            super.moveCaret(e);
+        }
     }
 }

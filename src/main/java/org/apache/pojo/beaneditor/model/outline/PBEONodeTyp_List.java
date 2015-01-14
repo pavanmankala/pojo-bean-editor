@@ -28,6 +28,7 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
         Object existingValue = getNodeValue();
 
         if (existingValue != null && existingValue instanceof List) {
+            boolean anythingAdded = false;
             if (PBEUtils.isRepresentedAsLeaf(listElemType)) {
                 for (Object branch : ((List<?>) existingValue)) {
                     int index = backingList.size();
@@ -35,12 +36,20 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
                     addNodeIntern(index, primObj);
                     PBEONode addedNode = backingList.get(index);
                     addedNode.setNodeValue(branch);
+                    anythingAdded = true;
                 }
             } else {
                 for (Object branch : ((List<?>) existingValue)) {
                     addNodeIntern(backingList.size(), branch);
+                    anythingAdded = true;
                 }
             }
+
+            if (!anythingAdded) {
+                addNewBranchNode(0);
+            }
+        } else {
+            addNewBranchNode(0);
         }
     }
 
@@ -75,10 +84,10 @@ public class PBEONodeTyp_List extends PBEOExtendableNode {
     @Override
     public void visit(PBEOVisitor visitor, int step) {
         for (PBEONode node : backingList) {
-            visitor.node(node, step + 1);
+            visitor.node(node, step);
 
             if (!node.isLeaf() && node instanceof Visitable) {
-                ((Visitable) node).visit(visitor, step + 2);
+                ((Visitable) node).visit(visitor, step + 1);
             }
         }
     }

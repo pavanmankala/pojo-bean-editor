@@ -11,4 +11,13 @@ public class PojoMemberView extends AbstractPojoBeanEditorView {
     public float getAlignment(int axis) {
         return 0.0f;
     }
+
+    @Override
+    protected short getTopInset() {
+        return 3;
+    }
+
+    public boolean isFolded() {
+        return ((PojoMemberKeyView) getView(0)).isFolded();
+    }
 }

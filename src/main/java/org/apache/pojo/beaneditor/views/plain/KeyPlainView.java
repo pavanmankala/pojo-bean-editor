@@ -15,8 +15,9 @@ import javax.swing.text.Position.Bias;
 import javax.swing.text.Utilities;
 
 public class KeyPlainView extends PojoPlainViewBase {
-    private static final Color keyColor = new Color(106, 62, 62);
-    private static final Color keyLeafColor = new Color(127, 0, 85), keyBackground = new Color(250, 255, 250);
+    private static final Color keyColor = new Color(186, 145, 145);
+    private static final Color keyLeafColor = new Color(120, 0, 85), keyBackground = new Color(250, 255, 250),
+            leafKeyBackground = new Color(245, 255, 245);
     private static final Map<Font, Font> boldFontMap = new HashMap<Font, Font>();
 
     public KeyPlainView(Element elem) {
@@ -28,11 +29,12 @@ public class KeyPlainView extends PojoPlainViewBase {
         Graphics2D g2d = (Graphics2D) g;
         Color resetColor = g.getColor();
 
-        if (!node.isLeaf()) {
-            g2d.setColor(keyBackground);
-            g2d.fill(a);
-            g2d.setColor(resetColor);
-        }
+        g2d.setColor(node.isLeaf() ? leafKeyBackground : keyBackground);
+        g2d.fill(a);
+        // g2d.setColor(g2d.getColor().darker());
+        // Rectangle r = (Rectangle) a;
+        // g2d.drawLine(r.x, r.y + r.height, r.x + r.width, r.y + r.height);
+        g2d.setColor(resetColor);
 
         super.paint(g, a);
     }
