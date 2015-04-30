@@ -1,16 +1,12 @@
 package org.apache.pojo.beaneditor;
 
-import java.awt.FontMetrics;
 import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Toolkit;
-import java.awt.font.FontRenderContext;
-import java.lang.reflect.Method;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.swing.JLabel;
 import javax.swing.JTextArea;
 import javax.swing.undo.UndoManager;
 
@@ -55,29 +51,8 @@ public class PojoBeanEditor extends JTextArea {
         aaHints = (Map<?, ?>) Toolkit.getDefaultToolkit().getDesktopProperty("awt.font.desktophints");
         if (aaHints == null) {
             Map<RenderingHints.Key, Object> temp = new HashMap<RenderingHints.Key, Object>();
-            JLabel label = new JLabel();
-            FontMetrics fm = label.getFontMetrics(label.getFont());
-            Object hint = null;
-            try {
-                Method m = FontMetrics.class.getMethod("getFontRenderContext");
-                FontRenderContext frc = (FontRenderContext) m.invoke(fm);
-                m = FontRenderContext.class.getMethod("getAntiAliasingHint");
-                hint = m.invoke(frc);
-            } catch (RuntimeException re) {
-                throw re;
-            } catch (Exception e) {
-            }
-
-            if (hint == null) {
-                String os = System.getProperty("os.name").toLowerCase();
-                if (os.contains("windows")) {
-                    hint = RenderingHints.VALUE_TEXT_ANTIALIAS_ON;
-                } else {
-                    hint = RenderingHints.VALUE_TEXT_ANTIALIAS_DEFAULT;
-                }
-            }
-            temp.put(RenderingHints.KEY_TEXT_ANTIALIASING, hint);
-
+            temp.put(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_LCD_HRGB);
+            temp.put(RenderingHints.KEY_TEXT_LCD_CONTRAST, 120);
             aaHints = temp;
 
         }
